@@ -1,0 +1,17 @@
+C:\Projects\MehmetEminProje\Application\bin\Debug\net10.0\Application.deps.json
+C:\Projects\MehmetEminProje\Application\bin\Debug\net10.0\Application.dll
+C:\Projects\MehmetEminProje\Application\bin\Debug\net10.0\Application.pdb
+C:\Projects\MehmetEminProje\Application\bin\Debug\net10.0\Domain.dll
+C:\Projects\MehmetEminProje\Application\bin\Debug\net10.0\Entities.dll
+C:\Projects\MehmetEminProje\Application\bin\Debug\net10.0\Entities.pdb
+C:\Projects\MehmetEminProje\Application\bin\Debug\net10.0\Domain.pdb
+C:\Projects\MehmetEminProje\Application\obj\Debug\net10.0\Application.csproj.AssemblyReference.cache
+C:\Projects\MehmetEminProje\Application\obj\Debug\net10.0\Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\MehmetEminProje\Application\obj\Debug\net10.0\Application.AssemblyInfoInputs.cache
+C:\Projects\MehmetEminProje\Application\obj\Debug\net10.0\Application.AssemblyInfo.cs
+C:\Projects\MehmetEminProje\Application\obj\Debug\net10.0\Application.csproj.CoreCompileInputs.cache
+C:\Projects\MehmetEminProje\Application\obj\Debug\net10.0\Applicat.44B5EDA2.Up2Date
+C:\Projects\MehmetEminProje\Application\obj\Debug\net10.0\Application.dll
+C:\Projects\MehmetEminProje\Application\obj\Debug\net10.0\refint\Application.dll
+C:\Projects\MehmetEminProje\Application\obj\Debug\net10.0\Application.pdb
+C:\Projects\MehmetEminProje\Application\obj\Debug\net10.0\ref\Application.dll

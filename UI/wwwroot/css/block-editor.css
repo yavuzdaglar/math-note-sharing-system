@@ -1,0 +1,109 @@
+/* Block Editor Premium Styles */
+.editor-container {
+    max-width: 800px;
+    margin: 40px auto;
+    background: transparent;
+    padding: 20px;
+}
+
+.note-title-input {
+    font-size: 3rem;
+    font-weight: 900;
+    border: none;
+    outline: none;
+    width: 100%;
+    margin-bottom: 2rem;
+    color: #162d42; /* brand-navy */
+    background: transparent;
+    letter-spacing: -0.025em;
+}
+
+.block-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.block-wrapper {
+    position: relative;
+    border: 1px solid transparent;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.block-wrapper:hover {
+    background: white;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    border-color: #f1f5f9;
+}
+
+.block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.block-wrapper:hover .block-header {
+    opacity: 1;
+}
+
+.block-type-badge {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #469d91; /* brand-teal */
+    background: #f0f9f8;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.block-content textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 1.125rem;
+    line-height: 1.7;
+    color: #334155;
+    resize: none;
+}
+
+.btn-add-block {
+    background: white;
+    border: 2px dashed #e2e8f0;
+    color: #64748b;
+    padding: 1rem 2.5rem;
+    border-radius: 9999px;
+    transition: all 0.3s;
+    font-weight: 600;
+}
+
+.btn-add-block:hover {
+    border-color: #469d91;
+    color: #469d91;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(70, 157, 145, 0.1);
+}
+
+.editor-actions-bar {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    background: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    gap: 1rem;
+    z-index: 50;
+    border: 1px solid #f1f5f9;
+}
+
+/* Custom Block Decoration */
+.block-importantnote { border-left: 4px solid #469d91; background: #f0f9f8 !important; }
+.block-heading textarea { font-weight: 800; color: #162d42; font-size: 2rem; }
+.block-code textarea { font-family: 'JetBrains Mono', monospace; background: #0f172a; color: #f8fafc; padding: 1.5rem; border-radius: 1rem; }

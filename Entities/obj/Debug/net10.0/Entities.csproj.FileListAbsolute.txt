@@ -1,0 +1,11 @@
+C:\Projects\MehmetEminProje\Entities\bin\Debug\net10.0\Entities.deps.json
+C:\Projects\MehmetEminProje\Entities\bin\Debug\net10.0\Entities.dll
+C:\Projects\MehmetEminProje\Entities\bin\Debug\net10.0\Entities.pdb
+C:\Projects\MehmetEminProje\Entities\obj\Debug\net10.0\Entities.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\MehmetEminProje\Entities\obj\Debug\net10.0\Entities.AssemblyInfoInputs.cache
+C:\Projects\MehmetEminProje\Entities\obj\Debug\net10.0\Entities.AssemblyInfo.cs
+C:\Projects\MehmetEminProje\Entities\obj\Debug\net10.0\Entities.csproj.CoreCompileInputs.cache
+C:\Projects\MehmetEminProje\Entities\obj\Debug\net10.0\Entities.dll
+C:\Projects\MehmetEminProje\Entities\obj\Debug\net10.0\refint\Entities.dll
+C:\Projects\MehmetEminProje\Entities\obj\Debug\net10.0\Entities.pdb
+C:\Projects\MehmetEminProje\Entities\obj\Debug\net10.0\ref\Entities.dll

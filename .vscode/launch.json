@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Api",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/Api/bin/Debug/net10.0/Api.dll",
+      "cwd": "${workspaceFolder}/Api",
+      "preLaunchTask": "build Api",
+      "launchSettingsProfile": "https",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on: (https?://\\S+)",
+        "uriFormat": "%s/swagger"
+      },
+      "stopAtEntry": false
+    },
+    {
+      "name": "UI",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/UI/bin/Debug/net10.0/UI.dll",
+      "cwd": "${workspaceFolder}/UI",
+      "preLaunchTask": "build UI",
+      "launchSettingsProfile": "https",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on: (https?://\\S+)",
+        "uriFormat": "%s"
+      },
+      "stopAtEntry": false
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Api + UI",
+      "configurations": ["Api", "UI"],
+      "stopAll": true
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+@model IReadOnlyList<SidebarCategoryViewModel>
+@{
+    var categories = Model ?? Array.Empty<SidebarCategoryViewModel>();
+    var defaultOpenId = categories.Count > 0 ? categories[0].Id : null;
+}
+
+<aside id="sidebar" class="bg-brand-navy text-white h-screen fixed left-0 top-0 pt-16 z-20 border-r border-white/5 overflow-y-auto transition-transform duration-300 translate-x-0 w-64">
+    <div class="p-4 space-y-2">
+        <button id="home-button" data-note="HOME" class="w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 bg-brand-teal text-white font-bold shadow-lg shadow-brand-teal/20">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="font-medium">Ana Sayfa</span>
+        </button>
+        <div class="pt-2 border-b border-white/5"></div>
+    </div>
+
+    <nav class="px-2 space-y-1">
+        @foreach (var category in categories)
+        {
+            var isOpen = category.Id == defaultOpenId;
+            var buttonClasses = isOpen
+                ? "bg-brand-teal/30 text-brand-teal-light"
+                : "hover:bg-white/5 text-slate-300 hover:text-white";
+            var chevron = isOpen ? "chevron-down" : "chevron-right";
+            var panelClass = isOpen ? "" : "hidden";
+
+            <div class="group" data-category="@category.Id">
+                <button
+                    data-category-button
+                    data-category-id="@category.Id"
+                    aria-expanded="@isOpen.ToString().ToLower()"
+                    class="w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 @buttonClasses">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="calculator" class="w-4 h-4"></i>
+                        <span class="font-medium">@category.Name</span>
+                    </div>
+                    <i data-lucide="@chevron" data-chevron class="w-4 h-4"></i>
+                </button>
+
+                <div class="overflow-hidden @panelClass" data-category-panel="@category.Id">
+                    <div class="ml-9 mt-1 space-y-1 border-l border-white/10">
+                        @foreach (var course in category.Courses)
+                        {
+                            <button
+                                data-note="@course.Name"
+                                data-note-id="@course.Id"
+                                class="w-full text-left p-2 pl-4 text-sm rounded-md transition-colors text-slate-400 hover:text-white hover:bg-white/5">
+                                @course.Name
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </nav>
+</aside>

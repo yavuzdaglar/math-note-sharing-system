@@ -1,0 +1,57 @@
+@{
+    var showAdminLogin = ViewData["ShowAdminLogin"] as bool? ?? false;
+}
+
+<header id="header" class="h-16 bg-brand-navy text-white fixed top-0 right-0 left-0 z-30 flex items-center justify-between px-6 border-b border-white/5 shadow-lg">
+    <div class="flex items-center gap-4">
+        <button id="sidebar-toggle" class="p-2 hover:bg-white/10 rounded-lg transition-colors text-brand-teal-light" title="Kenar çubuğunu gizle">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" onclick="window.location.href='/'">
+            <div class="w-10 h-10 flex items-center justify-center">
+                <div class="w-full h-full bg-brand-teal rounded-lg flex items-center justify-center font-bold text-xl text-white shadow-lg border border-white/10 overflow-hidden">
+                    <img src="/logo.png" alt="V" class="w-full h-full object-cover" onerror="this.style.display='none'" />
+                    <span class="logo-fallback">V</span>
+                </div>
+            </div>
+            <h1 class="text-xl font-extrabold tracking-tight uppercase text-white">
+                <span class="text-brand-teal-light">VURMAZ ONLİNE</span> NOTLARI
+            </h1>
+        </div>
+    </div>
+    
+    <div class="hidden md:flex items-center bg-white/5 rounded-full px-4 py-1.5 focus-within:bg-white/10 transition-all border border-white/5 focus-within:border-brand-teal/50">
+        <i data-lucide="search" class="w-4 h-4 text-slate-500"></i>
+        <input type="text" placeholder="Not ara..." class="bg-transparent border-none focus:ring-0 text-sm ml-2 w-64 placeholder:text-slate-400 text-white outline-none" />
+    </div>
+
+    <div class="flex items-center gap-4">
+        @{
+            var isAdmin = ViewData["IsAdmin"] as bool? ?? false;
+        }
+
+        @if (isAdmin)
+        {
+            <a href="/Admin" class="hidden sm:inline-flex items-center gap-2 rounded-full border border-brand-teal/40 bg-brand-teal/20 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-brand-teal/30 hover:shadow-lg hover:shadow-brand-teal/20">
+                <i data-lucide="shield" class="w-4 h-4"></i>
+                Yönetim Paneli
+            </a>
+        }
+        else
+        {
+            <button id="admin-login-open" class="hidden sm:inline-flex items-center gap-2 rounded-full border border-brand-teal/40 bg-brand-teal/20 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-brand-teal/30 hover:shadow-lg hover:shadow-brand-teal/20">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+                Admin Giriş
+            </button>
+        }
+
+        <button id="dark-mode-toggle" class="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 border bg-white/10 border-white/20 text-blue-200 hover:scale-105 active:scale-95 shadow-sm">
+            <i data-lucide="moon" class="w-4 h-4"></i>
+            <span class="text-sm font-semibold">Karanlık</span>
+        </button>
+
+        <button id="menu-btn" class="md:hidden p-2 hover:bg-white/10 rounded-full">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+    </div>
+</header>

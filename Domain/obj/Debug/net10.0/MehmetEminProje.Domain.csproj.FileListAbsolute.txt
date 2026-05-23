@@ -1,0 +1,11 @@
+C:\Projects\MehmetEminProje\MehmetEminProje.Domain\bin\Debug\net10.0\MehmetEminProje.Domain.deps.json
+C:\Projects\MehmetEminProje\MehmetEminProje.Domain\bin\Debug\net10.0\MehmetEminProje.Domain.dll
+C:\Projects\MehmetEminProje\MehmetEminProje.Domain\bin\Debug\net10.0\MehmetEminProje.Domain.pdb
+C:\Projects\MehmetEminProje\MehmetEminProje.Domain\obj\Debug\net10.0\MehmetEminProje.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\MehmetEminProje\MehmetEminProje.Domain\obj\Debug\net10.0\MehmetEminProje.Domain.AssemblyInfoInputs.cache
+C:\Projects\MehmetEminProje\MehmetEminProje.Domain\obj\Debug\net10.0\MehmetEminProje.Domain.AssemblyInfo.cs
+C:\Projects\MehmetEminProje\MehmetEminProje.Domain\obj\Debug\net10.0\MehmetEminProje.Domain.csproj.CoreCompileInputs.cache
+C:\Projects\MehmetEminProje\MehmetEminProje.Domain\obj\Debug\net10.0\MehmetEminProje.Domain.dll
+C:\Projects\MehmetEminProje\MehmetEminProje.Domain\obj\Debug\net10.0\refint\MehmetEminProje.Domain.dll
+C:\Projects\MehmetEminProje\MehmetEminProje.Domain\obj\Debug\net10.0\MehmetEminProje.Domain.pdb
+C:\Projects\MehmetEminProje\MehmetEminProje.Domain\obj\Debug\net10.0\ref\MehmetEminProje.Domain.dll

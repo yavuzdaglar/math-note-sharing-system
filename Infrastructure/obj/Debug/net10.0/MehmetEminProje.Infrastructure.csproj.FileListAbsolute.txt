@@ -1,0 +1,15 @@
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\bin\Debug\net10.0\MehmetEminProje.Infrastructure.deps.json
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\bin\Debug\net10.0\MehmetEminProje.Infrastructure.dll
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\bin\Debug\net10.0\MehmetEminProje.Infrastructure.pdb
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\bin\Debug\net10.0\MehmetEminProje.Domain.dll
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\bin\Debug\net10.0\MehmetEminProje.Domain.pdb
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\obj\Debug\net10.0\MehmetEminProje.Infrastructure.csproj.AssemblyReference.cache
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\obj\Debug\net10.0\MehmetEminProje.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\obj\Debug\net10.0\MehmetEminProje.Infrastructure.AssemblyInfoInputs.cache
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\obj\Debug\net10.0\MehmetEminProje.Infrastructure.AssemblyInfo.cs
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\obj\Debug\net10.0\MehmetEminProje.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\obj\Debug\net10.0\MehmetEm.E9D9753F.Up2Date
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\obj\Debug\net10.0\MehmetEminProje.Infrastructure.dll
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\obj\Debug\net10.0\refint\MehmetEminProje.Infrastructure.dll
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\obj\Debug\net10.0\MehmetEminProje.Infrastructure.pdb
+C:\Projects\MehmetEminProje\MehmetEminProje.Infrastructure\obj\Debug\net10.0\ref\MehmetEminProje.Infrastructure.dll

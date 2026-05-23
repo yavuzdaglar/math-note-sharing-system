@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "MehmetEminProje.Application/1.0.0": {
+        "dependencies": {
+          "MehmetEminProje.Domain": "1.0.0"
+        },
+        "runtime": {
+          "MehmetEminProje.Application.dll": {}
+        }
+      },
+      "MehmetEminProje.Domain/1.0.0": {
+        "runtime": {
+          "MehmetEminProje.Domain.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "MehmetEminProje.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "MehmetEminProje.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

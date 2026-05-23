@@ -1,0 +1,76 @@
+<div id="admin-login-modal" class="hidden fixed inset-0 z-40" aria-hidden="true">
+    <div id="admin-login-backdrop" class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"></div>
+
+    <div class="relative z-10 mx-auto mt-24 w-full max-w-md px-4">
+        <div class="rounded-3xl border border-white/10 bg-brand-navy text-white shadow-2xl">
+            <div class="flex items-center justify-between border-b border-white/10 px-6 py-4">
+                <div>
+                    <h3 class="text-xl font-bold">Admin Giriş</h3>
+                    <p class="text-sm text-slate-300">Yetkili hesap ile devam edin.</p>
+                </div>
+                <button type="button" data-admin-login-close class="rounded-full p-2 text-slate-300 hover:bg-white/10 hover:text-white" aria-label="Kapat">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+
+            <form id="admin-login-form" class="space-y-5 px-6 py-6" autocomplete="off">
+                <div class="space-y-2">
+                    <label for="admin-username" class="text-sm font-semibold text-slate-200">Kullanıcı Adı</label>
+                    <input
+                        id="admin-username"
+                        name="username"
+                        type="text"
+                        placeholder="admin"
+                        class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400 focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/30"
+                        required
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="admin-password" class="text-sm font-semibold text-slate-200">Şifre</label>
+                    <input
+                        id="admin-password"
+                        name="password"
+                        type="password"
+                        placeholder="••••••••"
+                        class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400 focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/30"
+                        required
+                    />
+                </div>
+
+                <div id="login-error" class="hidden text-sm text-red-400 bg-red-400/10 p-3 rounded-xl border border-red-400/20"></div>
+
+                <div class="flex items-center justify-between gap-3">
+                    <button type="submit" class="flex-1 rounded-2xl bg-brand-teal px-4 py-3 text-sm font-bold text-white shadow-lg shadow-brand-teal/30 transition-transform hover:scale-[1.02]">
+                        Giriş Yap
+                    </button>
+                    <button type="button" data-admin-login-close class="rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-white/10">
+                        İptal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const errorDiv = document.getElementById('login-error');
+        errorDiv.classList.add('hidden');
+
+        const response = await fetch('/Account/Login', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            window.location.href = result.redirectUrl;
+        } else {
+            errorDiv.textContent = result.message;
+            errorDiv.classList.remove('hidden');
+        }
+    });
+</script>

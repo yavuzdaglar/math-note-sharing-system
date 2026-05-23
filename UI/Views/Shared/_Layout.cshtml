@@ -1,0 +1,31 @@
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Vurmaz Online Notları</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-navy': '#162d42',
+                        'brand-teal': '#469d91',
+                        'brand-teal-light': '#72b0a8'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen transition-all duration-500 overflow-x-hidden">
+    @RenderBody()
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build Api",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "Api"],
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "build UI",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "UI"],
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Run Api",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["run", "--project", "Api"],
+      "isBackground": true
+    },
+    {
+      "label": "Run UI",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["run", "--project", "UI"],
+      "isBackground": true
+    },
+    {
+      "label": "Run Api + UI",
+      "dependsOn": ["Run Api", "Run UI"],
+      "dependsOrder": "parallel"
+    }
+  ]
+}

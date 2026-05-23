@@ -1,0 +1,139 @@
+/* Global Dark Theme Settings */
+:root {
+    --bg-dark: #121212;
+    --surface-dark: #1e1e1e;
+    --surface-hover: #2c2c2c;
+    --accent-primary: #8a2be2; /* Mor vurgu */
+    --accent-secondary: #03dac6; /* Turkuaz vurgu */
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --border-color: #333;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Navbar Component */
+.top-navbar {
+    background-color: var(--surface-dark);
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.navbar-brand h2 {
+    color: var(--accent-primary);
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.navbar-search input {
+    background-color: var(--bg-dark);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: 20px;
+    width: 300px;
+    outline: none;
+}
+
+.navbar-search input:focus {
+    border-color: var(--accent-primary);
+}
+
+.navbar-profile .avatar {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+}
+
+/* Layout Wrapper */
+.main-wrapper {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Sidebar Component */
+.sidebar {
+    width: 250px;
+    background-color: var(--surface-dark);
+    border-right: 1px solid var(--border-color);
+    padding: 20px 0;
+}
+
+.sidebar-menu {
+    list-style: none;
+}
+
+.sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.sidebar-menu li a:hover, .sidebar-menu li.active a {
+    background-color: var(--surface-hover);
+    border-left: 3px solid var(--accent-primary);
+}
+
+.sidebar-menu .icon {
+    margin-right: 15px;
+    font-size: 1.1em;
+}
+
+/* Main Content Area */
+.content-area {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+/* Note Cards (Index) */
+.note-card {
+    background-color: var(--surface-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+}
+
+.note-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-secondary);
+}
+
+.note-card h3 {
+    margin-bottom: 10px;
+    color: var(--accent-secondary);
+}
+
+.note-card p {
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
