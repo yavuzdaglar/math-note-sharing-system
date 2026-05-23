@@ -1,5 +1,6 @@
 let blocks = [];
 let noteTitle = "";
+let isSaving = false;
 
 function applyTemplate() {
     blocks = [];
@@ -17,6 +18,7 @@ function applyTemplate() {
 function addBlock(type, content = null) {
     const tempId = Math.random().toString(36).substr(2, 9);
     const newBlock = {
+        id: 0,
         tempId: tempId,
         type: type, 
         content: content || getDefaultContent(type),
@@ -148,61 +150,164 @@ function closePublishModal() { document.getElementById('publishModal').classList
 
 function confirmPublish() {
     const courseId = document.getElementById('courseSelect').value;
+    if (!courseId) {
+        if (window.showToast) {
+            window.showToast("Lütfen bir ders seçin.", "warning");
+        }
+        return;
+    }
+    closePublishModal();
     saveNote(true, courseId);
 }
 
-async function saveNote(publish, selectedCourseId = null) {
+async function saveNote(isPublish, selectedCourseId = null) {
+    if (isSaving) return;
+
     const title = document.getElementById('noteTitle').value;
-    if (publish && !selectedCourseId) {
-        openPublishModal();
+    
+    if (isPublish) {
+        if (!selectedCourseId) {
+            openPublishModal();
+            return;
+        }
+    }
+
+    if (!title) {
+        if (window.showToast) {
+            window.showToast("Lütfen bir not başlığı girin.", "warning");
+        }
         return;
     }
-    if (!title) return;
 
-    const payload = {
+    const notePayload = {
         title: title,
         courseId: selectedCourseId ? parseInt(selectedCourseId) : null,
-        publish: !!publish,
-        blocks: blocks.map((b, i) => ({
-            type: getNoteBlockTypeEnumValue(b.type),
-            order: i + 1,
-            content: b.content
-        }))
+        status: isPublish ? "Published" : "Draft",
     };
 
-    console.log("Saving Note Payload:", payload);
-
     const method = noteId > 0 ? 'PUT' : 'POST';
-    const url = noteId > 0 ? `https://localhost:7078/api/admin/notes/${noteId}` : 'https://localhost:7078/api/admin/notes';
+    let url = noteId > 0 ? `https://localhost:7078/api/admin/notes/${noteId}` : 'https://localhost:7078/api/admin/notes';
 
+    // Önce notu (başlık, kurs vb.) kaydedelim ve ID'sini alalım
     try {
-        const response = await fetch(url, {
+        isSaving = true;
+        setSavingState(true);
+
+        const noteResponse = await fetch(url, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(notePayload)
         });
 
-        if (response.ok) {
-            if (publish && payload.courseId) {
-                window.location.href = '/?courseId=' + payload.courseId;
-            } else {
-                window.location.href = '/Admin';
+        if (!noteResponse.ok) {
+            let errorMessage = "Not kaydedilirken hata oluştu.";
+            try {
+                const errorData = await noteResponse.json();
+                if (errorData && errorData.error) errorMessage = errorData.error;
+            } catch { }
+            if (window.showToast) {
+                window.showToast(errorMessage, "error");
             }
+            console.error("Save Error:", errorMessage);
+            setSavingState(false);
+            isSaving = false;
+            return;
         }
-    } catch (e) { console.error("Save Error:", e); }
+
+        const savedNote = await noteResponse.json();
+        const currentNoteId = savedNote.id;
+
+        // Şimdi blokları bu nota ekleyelim/güncelleyelim
+        const blocksPayload = blocks.map((b, i) => ({
+            id: b.id || 0, // Mevcut bloklar için ID gönder
+            type: b.type,
+            order: i + 1,
+            content: b.content // İçeriği JSON obje olarak gönder
+        }));
+
+        const blocksUrl = `https://localhost:7078/api/admin/notes/${currentNoteId}/blocks`;
+        const blocksResponse = await fetch(blocksUrl, {
+            method: 'POST', // Her zaman blokları toplu ekleme/güncelleme endpoint'ini kullan
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(blocksPayload)
+        });
+
+        if (blocksResponse.ok) {
+            if (isPublish) {
+                const publishResponse = await fetch(`https://localhost:7078/api/admin/notes/${currentNoteId}/publish`, {
+                    method: 'POST'
+                });
+
+                if (!publishResponse.ok) {
+                    let errorMessage = "Yayınlama başarısız.";
+                    try {
+                        const errorData = await publishResponse.json();
+                        if (errorData && errorData.error) errorMessage = errorData.error;
+                    } catch { }
+                    console.error("Publish Error:", errorMessage);
+                    if (window.showToast) {
+                        window.showToast(errorMessage, "error");
+                    }
+                    setSavingState(false);
+                    isSaving = false;
+                    return;
+                }
+            }
+
+            window.location.href = '/Admin';
+        } else {
+            console.error("Bloklar kaydedilirken hata oluştu.");
+            if (window.showToast) {
+                window.showToast("Bloklar kaydedilemedi.", "error");
+            }
+            setSavingState(false);
+            isSaving = false;
+        }
+
+    } catch (e) {
+        console.error("Save Error:", e);
+        if (window.showToast) {
+            window.showToast("Kaydetme sırasında hata oluştu.", "error");
+        }
+        setSavingState(false);
+        isSaving = false;
+    }
 }
 
 async function loadNote(id) {
     const response = await fetch(`https://localhost:7078/api/admin/notes/${id}`);
     const data = await response.json();
     document.getElementById('noteTitle').value = data.title;
-    blocks = data.blocks.map(b => ({
-        tempId: Math.random().toString(36).substr(2, 9),
-        type: getNoteBlockTypeEnumString(b.type),
-        content: b.content, // API'den zaten obje olarak geliyor
-        order: b.order
-    }));
+    blocks = data.blocks.map(b => {
+        let contentObject = b.content;
+        if (typeof contentObject === 'string') {
+            try {
+                contentObject = JSON.parse(contentObject);
+            } catch (e) {
+                console.error("İçerik ayrıştırılamadı:", b.content, e);
+                // Hata durumunda içeriği düz metin olarak kabul et
+                contentObject = { text: b.content };
+            }
+        }
+        
+        return {
+            id: b.id || 0,
+            tempId: Math.random().toString(36).substr(2, 9),
+            type: getNoteBlockTypeEnumString(b.type),
+            content: contentObject, // Artık bir nesne
+            order: b.order
+        };
+    });
     renderBlocks();
+}
+
+function setSavingState(isBusy) {
+    const buttons = document.querySelectorAll('.editor-actions-bar button');
+    buttons.forEach(btn => {
+        btn.disabled = isBusy;
+        btn.classList.toggle('opacity-60', isBusy);
+        btn.classList.toggle('cursor-not-allowed', isBusy);
+    });
 }
 
 function getNoteBlockTypeEnumValue(typeString) {
@@ -211,7 +316,30 @@ function getNoteBlockTypeEnumValue(typeString) {
 }
 
 function getNoteBlockTypeEnumString(value) {
-    const val = parseInt(value);
+    if (value === null || value === undefined) return 'Paragraph';
+
+    if (typeof value === 'string') {
+        const numeric = parseInt(value, 10);
+        if (!Number.isNaN(numeric)) {
+            const numericMap = { 0: 'Paragraph', 1: 'Heading', 2: 'ImportantNote', 3: 'Video', 4: 'Image', 5: 'DoubleImage', 6: 'Code', 7: 'Quote', 8: 'List' };
+            return numericMap[numeric] || 'Paragraph';
+        }
+
+        const normalized = value.trim().toLowerCase();
+        const stringMap = {
+            paragraph: 'Paragraph',
+            heading: 'Heading',
+            importantnote: 'ImportantNote',
+            video: 'Video',
+            image: 'Image',
+            doubleimage: 'DoubleImage',
+            code: 'Code',
+            quote: 'Quote',
+            list: 'List'
+        };
+        return stringMap[normalized] || 'Paragraph';
+    }
+
     const map = { 0: 'Paragraph', 1: 'Heading', 2: 'ImportantNote', 3: 'Video', 4: 'Image', 5: 'DoubleImage', 6: 'Code', 7: 'Quote', 8: 'List' };
-    return map[val] || 'Paragraph';
+    return map[value] || 'Paragraph';
 }

@@ -2,7 +2,7 @@
     var showAdminLogin = ViewData["ShowAdminLogin"] as bool? ?? false;
 }
 
-<header id="header" class="h-16 bg-brand-navy text-white fixed top-0 right-0 left-0 z-30 flex items-center justify-between px-6 border-b border-white/5 shadow-lg">
+<header id="header" class="h-16 bg-brand-navy text-white fixed top-0 right-0 left-0 z-30 flex items-center justify-between px-6 pr-36 border-b border-white/5 shadow-lg">
     <div class="flex items-center gap-4">
         <button id="sidebar-toggle" class="p-2 hover:bg-white/10 rounded-lg transition-colors text-brand-teal-light" title="Kenar çubuğunu gizle">
             <i data-lucide="menu" class="w-6 h-6"></i>
@@ -44,11 +44,6 @@
                 Admin Giriş
             </button>
         }
-
-        <button id="dark-mode-toggle" class="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 border bg-white/10 border-white/20 text-blue-200 hover:scale-105 active:scale-95 shadow-sm">
-            <i data-lucide="moon" class="w-4 h-4"></i>
-            <span class="text-sm font-semibold">Karanlık</span>
-        </button>
 
         <button id="menu-btn" class="md:hidden p-2 hover:bg-white/10 rounded-full">
             <i data-lucide="menu" class="w-6 h-6"></i>

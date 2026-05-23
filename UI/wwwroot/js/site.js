@@ -1,7 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
 	const html = document.documentElement;
-	const darkToggle = document.getElementById("dark-mode-toggle");
+	const darkToggles = document.querySelectorAll("[data-theme-toggle]");
 	const sidebarToggle = document.getElementById("sidebar-toggle");
+		const globalThemeToggle = document.getElementById("global-theme-toggle");
+		const toastContainer = document.getElementById("toast-container");
 	const sidebar = document.getElementById("sidebar");
 	const mainContent = document.getElementById("main-content");
 	const homeButton = document.getElementById("home-button");
@@ -10,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	const homeState = document.getElementById("home-state");
 	const noteButtons = document.querySelectorAll("[data-note]");
 	const noteTitleEls = document.querySelectorAll("[data-note-title]");
+	const noteCourseEls = document.querySelectorAll("[data-note-course]");
 	const categoryButtons = document.querySelectorAll("[data-category-button]");
 	const adminLoginOpen = document.getElementById("admin-login-open");
 	const adminLoginModal = document.getElementById("admin-login-modal");
@@ -31,19 +34,53 @@ document.addEventListener("DOMContentLoaded", () => {
 		isDark = value;
 		if (isDark) {
 			html.classList.add("dark");
-			if (darkToggle) {
-				darkToggle.className = "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 border bg-brand-navy border-brand-teal text-amber-400 hover:scale-105 active:scale-95 shadow-sm";
-				darkToggle.innerHTML = '<i data-lucide="sun" class="w-4 h-4"></i><span class="text-sm font-semibold">Aydınlık</span>';
-			}
 		} else {
 			html.classList.remove("dark");
-			if (darkToggle) {
-				darkToggle.className = "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 border bg-white/10 border-white/20 text-blue-200 hover:scale-105 active:scale-95 shadow-sm";
-				darkToggle.innerHTML = '<i data-lucide="moon" class="w-4 h-4"></i><span class="text-sm font-semibold">Karanlık</span>';
-			}
 		}
+
+		darkToggles.forEach((toggle) => {
+			if (isDark) {
+				toggle.className = "fixed top-4 right-4 z-[9999] flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 border bg-brand-navy border-brand-teal text-amber-400 hover:scale-105 active:scale-95 shadow-sm";
+				toggle.innerHTML = '<i data-lucide="sun" class="w-4 h-4"></i><span class="text-sm font-semibold">Aydınlık</span>';
+			} else {
+				toggle.className = "fixed top-4 right-4 z-[9999] flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 border bg-white/10 border-white/20 text-blue-200 hover:scale-105 active:scale-95 shadow-sm";
+				toggle.innerHTML = '<i data-lucide="moon" class="w-4 h-4"></i><span class="text-sm font-semibold">Karanlık</span>';
+			}
+		});
+
+		try {
+			localStorage.setItem("theme", isDark ? "dark" : "light");
+		} catch { }
 		updateIcons();
 	};
+
+	const showToast = (message, type = "info") => {
+		const container = toastContainer || (() => {
+			const el = document.createElement("div");
+			el.id = "toast-container";
+			el.className = "fixed bottom-4 right-4 z-[9999] flex flex-col gap-2";
+			document.body.appendChild(el);
+			return el;
+		})();
+
+		const toast = document.createElement("div");
+		const base = "px-4 py-3 rounded-xl text-sm font-semibold shadow-lg border backdrop-blur";
+		const styles = {
+			success: "bg-emerald-500/90 text-white border-emerald-400/40",
+			error: "bg-red-500/90 text-white border-red-400/40",
+			warning: "bg-amber-500/90 text-white border-amber-400/40",
+			info: "bg-slate-900/90 text-white border-slate-700/50"
+		};
+		toast.className = `${base} ${styles[type] || styles.info}`;
+		toast.textContent = message;
+		container.appendChild(toast);
+
+		setTimeout(() => {
+			toast.remove();
+		}, 3500);
+	};
+
+	window.showToast = showToast;
 
 	const setSidebarOpen = (value) => {
 		sidebarOpen = value;
@@ -93,6 +130,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	};
 
+	const updateCourseText = (courseName) => {
+		const label = courseName ? `Ders: ${courseName}` : "Akademik Notlar";
+		noteCourseEls.forEach((el) => {
+			el.textContent = label;
+		});
+	};
+
 	const setHomeButtonState = (active) => {
 		if (!homeButton) return;
 		const activeClasses = ["bg-brand-teal", "text-white", "font-bold", "shadow-lg", "shadow-brand-teal/20"];
@@ -137,6 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (response.ok) {
 				const note = await response.json();
 				updateNoteText(note.title);
+				updateCourseText(note.courseName);
 				renderBlocksPublic(note.blocks);
 				showNote();
 			}
@@ -153,14 +198,17 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
+		const normalizedCourseId = courseId.toString().replace(/^course-/, "");
+
 		setLoading(true);
 		setHomeButtonState(false);
 
 		try {
-			const response = await fetch(`https://localhost:7078/api/notes/course/${courseId}`);
+			const response = await fetch(`https://localhost:7078/api/notes/course/${normalizedCourseId}`);
 			if (response.ok) {
 				const note = await response.json();
 				updateNoteText(note.title);
+				updateCourseText(note.courseName);
 				renderBlocksPublic(note.blocks);
 				showNote();
 			} else {
@@ -175,7 +223,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		noteButtons.forEach((button) => {
 			const buttonId = button.getAttribute("data-note-id");
-			setNoteButtonState(button, buttonId === courseId);
+			const normalizedButtonId = buttonId ? buttonId.toString().replace(/^course-/, "") : null;
+			setNoteButtonState(button, normalizedButtonId === normalizedCourseId);
 		});
 	};
 
@@ -184,11 +233,35 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (!area) return;
 		area.innerHTML = "";
 
+		const normalizeBlockType = (value) => {
+			if (value === null || value === undefined) return 0;
+			if (typeof value === "number") return value;
+			if (typeof value === "string") {
+				const numeric = parseInt(value, 10);
+				if (!Number.isNaN(numeric)) return numeric;
+				const normalized = value.trim().toLowerCase();
+				const map = {
+					paragraph: 0,
+					heading: 1,
+					importantnote: 2,
+					video: 3,
+					image: 4,
+					doubleimage: 5,
+					code: 6,
+					quote: 7,
+					list: 8
+				};
+				return map[normalized] ?? 0;
+			}
+			return 0;
+		};
+
 		blocks.sort((a, b) => a.order - b.order).forEach(block => {
 			const el = document.createElement("div");
 			el.className = "mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700";
-			
-			switch(block.type) {
+
+			const blockType = normalizeBlockType(block.type);
+			switch(blockType) {
 				case 0: // Paragraph
 				case 7: // Quote
 					el.innerHTML = `<p class="text-xl leading-relaxed text-slate-600 dark:text-slate-300 font-medium">${block.content.text}</p>`;
@@ -269,9 +342,16 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	};
 
-	if (darkToggle) {
-		darkToggle.addEventListener("click", () => setDarkMode(!isDark));
-	}
+	darkToggles.forEach((toggle) => {
+		toggle.addEventListener("click", () => setDarkMode(!isDark));
+	});
+
+
+
+	const storedTheme = (() => {
+		try { return localStorage.getItem("theme"); } catch { return null; }
+	})();
+	setDarkMode(storedTheme === "dark");
 
 	if (sidebarToggle) {
 		sidebarToggle.addEventListener("click", () => setSidebarOpen(!sidebarOpen));

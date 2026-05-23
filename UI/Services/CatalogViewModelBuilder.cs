@@ -20,7 +20,7 @@ public static class CatalogViewModelBuilder
                     .OrderBy(c => c.Id)
                     .Select(course => new SidebarCourseViewModel
                     {
-                        Id = $"course-{course.Id}",
+                        Id = course.Id.ToString(),
                         Name = course.Name
                     })
                     .ToList()

@@ -5,6 +5,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Vurmaz Online Notları</title>
+    <script>
+        (function () {
+            try {
+                const theme = localStorage.getItem('theme');
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch { }
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -21,7 +31,14 @@
         }
     </script>
 </head>
-<body class="min-h-screen transition-all duration-500 overflow-x-hidden">
+<body class="min-h-screen transition-all duration-500 overflow-x-hidden bg-white text-slate-900 dark:bg-[#0d161e] dark:text-slate-100">
+    <button id="global-theme-toggle" data-theme-toggle class="fixed top-4 right-4 z-[9999] flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-700 shadow-md backdrop-blur hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200" type="button" aria-label="Tema">
+        <i data-lucide="moon" class="w-4 h-4"></i>
+        <span>Karanlık</span>
+    </button>
+
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2"></div>
+
     @RenderBody()
 
     <script src="https://unpkg.com/lucide@latest"></script>

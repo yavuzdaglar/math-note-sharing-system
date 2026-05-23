@@ -19,6 +19,8 @@ public class NoteSummaryDto
     public NoteStatus Status { get; set; }
     public int BlockCount { get; set; }
     public int? CourseId { get; set; }
+    public string? CourseName { get; set; }
+    public string? CourseCategoryName { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime UpdatedAtUtc { get; set; }
     public DateTime? PublishedAtUtc { get; set; }
@@ -46,6 +48,7 @@ public class NoteCreateDto
     public string? Summary { get; set; }
     public int? CourseId { get; set; }
     public List<BlockUpsertDto> Blocks { get; set; } = new();
+    public NoteStatus? Status { get; set; }
     public bool? Publish { get; set; }
 }
 
@@ -55,12 +58,12 @@ public class NoteUpdateDto
     public string? Slug { get; set; }
     public string? Summary { get; set; }
     public int? CourseId { get; set; }
-    public List<BlockUpsertDto> Blocks { get; set; } = new();
-    public bool? Publish { get; set; }
+    public NoteStatus? Status { get; set; }
 }
 
 public class BlockUpsertDto
 {
+    public int Id { get; set; } = 0;
     public NoteBlockType Type { get; set; }
     public int? Order { get; set; }
     public JsonElement Content { get; set; }

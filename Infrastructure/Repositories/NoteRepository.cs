@@ -25,6 +25,20 @@ public class NoteRepository : INoteRepository
         return await query.FirstOrDefaultAsync(n => n.Id == id, cancellationToken);
     }
 
+    public async Task<Note?> GetPublishedByCourseIdAsync(int courseId, CancellationToken cancellationToken)
+    {
+        return await _context.Notes.AsNoTracking()
+            .Include(n => n.Course)
+            .Include(n => n.Blocks)
+            .FirstOrDefaultAsync(n => n.CourseId == courseId && n.Status == NoteStatus.Published, cancellationToken);
+    }
+
+    public async Task<bool> CourseHasNoteAsync(int courseId, int? excludeNoteId, CancellationToken cancellationToken)
+    {
+        return await _context.Notes.AsNoTracking()
+            .AnyAsync(n => n.CourseId == courseId && (!excludeNoteId.HasValue || n.Id != excludeNoteId.Value), cancellationToken);
+    }
+
     public async Task<(IReadOnlyList<Note> Items, int TotalCount)> GetPagedAsync(
         NoteStatus? status,
         string? search,
@@ -34,6 +48,7 @@ public class NoteRepository : INoteRepository
     {
         IQueryable<Note> query = _context.Notes.AsNoTracking()
             .Include(n => n.Course)
+                .ThenInclude(c => c.CourseCategory)
             .Include(n => n.Blocks);
 
         if (status.HasValue)

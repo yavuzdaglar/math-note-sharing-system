@@ -4,6 +4,11 @@
 
 <link rel="stylesheet" href="~/css/block-editor.css" />
 
+<button type="button" onclick="history.back()" class="fixed top-4 left-4 z-[9999] flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-700 shadow-md backdrop-blur hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200">
+    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+    <span>Geri</span>
+</button>
+
 <div class="editor-container">
     <input type="text" id="noteTitle" class="note-title-input" placeholder="Not Başlığı..." />
     
@@ -14,21 +19,21 @@
     <!-- Yayınlama Modalı -->
     <div id="publishModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closePublishModal()"></div>
-        <div class="bg-white relative z-10 w-full max-w-lg rounded-[3rem] p-10 shadow-2xl">
+        <div class="bg-white text-slate-900 relative z-10 w-full max-w-lg rounded-[3rem] p-10 shadow-2xl">
             <h3 class="text-2xl font-black text-slate-900 mb-2">Notu Yayınla</h3>
             <p class="text-slate-500 text-sm mb-8 font-medium">Bu notun hangi ders altında görüneceğini seçin.</p>
             
             <div class="space-y-6">
                 <div>
                     <label class="block text-xs font-black text-slate-400 uppercase mb-2 ml-2">Kategori</label>
-                    <select id="categorySelect" onchange="loadCourses(this.value)" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-brand-teal/10">
+                    <select id="categorySelect" onchange="loadCourses(this.value)" class="w-full p-4 bg-slate-50 text-slate-900 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-brand-teal/10">
                         <option value="">Kategori Seçin...</option>
                     </select>
                 </div>
 
                 <div>
                     <label class="block text-xs font-black text-slate-400 uppercase mb-2 ml-2">Ders</label>
-                    <select id="courseSelect" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-brand-teal/10">
+                    <select id="courseSelect" class="w-full p-4 bg-slate-50 text-slate-900 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-brand-teal/10">
                         <option value="">Önce Kategori Seçin...</option>
                     </select>
                 </div>
@@ -71,7 +76,7 @@
         </button>
         <button onclick="addBlock('Video')" class="flex flex-col items-center p-4 rounded-2xl border-2 border-gray-50 hover:border-brand-teal hover:bg-teal-50 transition-all duration-300 group">
             <div class="bg-gray-100 p-3 rounded-xl group-hover:bg-brand-teal group-hover:text-white transition-colors mb-3">
-                <i data-lucide="youtube" class="w-6 h-6"></i>
+                <i data-lucide="video" class="w-6 h-6"></i>
             </div>
             <span class="text-sm font-bold text-gray-700">Video</span>
         </button>

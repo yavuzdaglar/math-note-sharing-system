@@ -79,6 +79,8 @@ C:\Projects\MehmetEminProje\UI\bin\Debug\net10.0\runtimes\win\lib\net6.0\System.
 C:\Projects\MehmetEminProje\UI\bin\Debug\net10.0\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
 C:\Projects\MehmetEminProje\UI\bin\Debug\net10.0\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
 C:\Projects\MehmetEminProje\UI\bin\Debug\net10.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
-C:\Projects\MehmetEminProje\UI\obj\Debug\net10.0\compressed\r5d9vsxkhx-{0}-h2wbpcybff-h2wbpcybff.gz
-C:\Projects\MehmetEminProje\UI\obj\Debug\net10.0\compressed\r6mzsqia01-{0}-zi4v9m5rc5-zi4v9m5rc5.gz
-C:\Projects\MehmetEminProje\UI\obj\Debug\net10.0\compressed\k83gvgtd2a-{0}-zp5uhyghf0-zp5uhyghf0.gz
+C:\Projects\MehmetEminProje\UI\obj\Debug\net10.0\UI.sourcelink.json
+C:\Projects\MehmetEminProje\UI\obj\Debug\net10.0\compressed\tstpz39oa0-{0}-qzkn1px9rl-qzkn1px9rl.gz
+C:\Projects\MehmetEminProje\UI\obj\Debug\net10.0\compressed\r6mzsqia01-{0}-oef2mepgtg-oef2mepgtg.gz
+C:\Projects\MehmetEminProje\UI\obj\Debug\net10.0\compressed\k83gvgtd2a-{0}-y67dhk7vu0-y67dhk7vu0.gz
+C:\Projects\MehmetEminProje\UI\obj\Debug\net10.0\compressed\r5d9vsxkhx-{0}-xgkl3jj24r-xgkl3jj24r.gz

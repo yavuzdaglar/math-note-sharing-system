@@ -42,6 +42,8 @@ public class NoteService : INoteService
                 Status = n.Status,
                 BlockCount = n.Blocks.Count,
                 CourseId = n.CourseId,
+                CourseName = n.Course?.Name,
+                CourseCategoryName = n.Course?.CourseCategory?.Name,
                 CreatedAtUtc = n.CreatedAtUtc,
                 UpdatedAtUtc = n.UpdatedAtUtc,
                 PublishedAtUtc = n.PublishedAtUtc
@@ -64,8 +66,7 @@ public class NoteService : INoteService
 
     public async Task<ServiceResult<NoteDetailDto>> GetNoteByCourseIdAsync(int courseId, CancellationToken cancellationToken)
     {
-        var (items, _) = await _repository.GetPagedAsync(NoteStatus.Published, null, 1, 100, cancellationToken);
-        var note = items.FirstOrDefault(n => n.CourseId == courseId);
+        var note = await _repository.GetPublishedByCourseIdAsync(courseId, cancellationToken);
         if (note == null)
         {
             return ServiceResult<NoteDetailDto>.Fail("Bu derse ait yayinlanmiş not bulunamadi.", 404);
@@ -81,14 +82,32 @@ public class NoteService : INoteService
         }
 
         var now = DateTime.UtcNow;
+        var isPublished = dto.Status.HasValue
+            ? dto.Status.Value == NoteStatus.Published
+            : dto.Publish == true;
+
+        if (isPublished && !dto.CourseId.HasValue)
+        {
+            return ServiceResult<NoteDetailDto>.Fail("Yayinlamak icin ders secilmelidir.", 400);
+        }
+
+        if (dto.CourseId.HasValue)
+        {
+            var hasNote = await _repository.CourseHasNoteAsync(dto.CourseId.Value, null, cancellationToken);
+            if (hasNote)
+            {
+                return ServiceResult<NoteDetailDto>.Fail("Bu ders zaten bir nota bagli.", 409);
+            }
+        }
+
         var note = new Note
         {
             Title = dto.Title.Trim(),
             Slug = string.IsNullOrWhiteSpace(dto.Slug) ? null : dto.Slug.Trim(),
             Summary = string.IsNullOrWhiteSpace(dto.Summary) ? null : dto.Summary.Trim(),
             CourseId = dto.CourseId,
-            Status = (dto.Publish == true) ? NoteStatus.Published : NoteStatus.Draft,
-            PublishedAtUtc = (dto.Publish == true) ? now : null,
+            Status = isPublished ? NoteStatus.Published : NoteStatus.Draft,
+            PublishedAtUtc = isPublished ? now : null,
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
@@ -124,41 +143,37 @@ public class NoteService : INoteService
         note.CourseId = dto.CourseId;
         note.UpdatedAtUtc = now;
 
-        // Yayınlama/Geri Çekme Durumu
-        if (dto.Publish == true)
+        if (dto.CourseId.HasValue)
         {
-            note.Status = NoteStatus.Published;
-            note.PublishedAtUtc ??= now;
-        }
-        else if (dto.Publish == false)
-        {
-            note.Status = NoteStatus.Draft;
-            note.PublishedAtUtc = null;
-        }
-
-        // Blokları Güncelle (Radikal Temizlik ve Yeniden Eklenme)
-        if (dto.Blocks != null)
-        {
-            var validation = ValidateBlocks(dto.Blocks);
-            if (!validation.Succeeded) return ServiceResult<NoteDetailDto>.Fail(validation.Error ?? "Blok doğrulama hatası.", validation.StatusCode);
-
-            // Mevcut blokları SİL (Entity Orphan Removal desteği yoksa dbSet üzerinden manuel temizlik önerilir ama burada collection.Clear kullanıyoruz)
-            note.Blocks.Clear();
-            await _repository.SaveChangesAsync(cancellationToken);
-
-            // Yeni blokları EKLE (NoteId ile ilişkilendirerek)
-            var newBlocks = BuildBlocks(dto.Blocks, now);
-            foreach (var b in newBlocks)
+            var hasNote = await _repository.CourseHasNoteAsync(dto.CourseId.Value, note.Id, cancellationToken);
+            if (hasNote)
             {
-                b.NoteId = note.Id;
-                note.Blocks.Add(b);
+                return ServiceResult<NoteDetailDto>.Fail("Bu ders zaten bir nota bagli.", 409);
             }
-            NormalizeOrder(note);
         }
 
+        // Yayınlama/Geri Çekme Durumu
+        if (dto.Status.HasValue)
+        {
+            if (dto.Status.Value == NoteStatus.Published && note.Status != NoteStatus.Published)
+            {
+                note.Status = NoteStatus.Published;
+                note.PublishedAtUtc ??= now;
+            }
+            else if (dto.Status.Value == NoteStatus.Draft && note.Status != NoteStatus.Draft)
+            {
+                note.Status = NoteStatus.Draft;
+                note.PublishedAtUtc = null;
+            }
+        }
+
+        if (note.Status == NoteStatus.Published && !note.CourseId.HasValue)
+        {
+            return ServiceResult<NoteDetailDto>.Fail("Yayinli not icin ders secilmelidir.", 400);
+        }
+        
         await _repository.SaveChangesAsync(cancellationToken);
         
-        // Refresh note from DB to be absolutely sure
         var updatedNote = await _repository.GetByIdAsync(id, true, cancellationToken);
         return ServiceResult<NoteDetailDto>.Success(MapNoteDetail(updatedNote!, true));
     }
@@ -213,6 +228,61 @@ public class NoteService : INoteService
             .ToList();
 
         return ServiceResult<List<BlockDto>>.Success(dto);
+    }
+
+    public async Task<ServiceResult<List<BlockDto>>> UpsertBlocksAsync(int noteId, List<BlockUpsertDto> blocks, CancellationToken cancellationToken)
+    {
+        var note = await _repository.GetByIdAsync(noteId, true, cancellationToken);
+        if (note == null) return ServiceResult<List<BlockDto>>.Fail("Not bulunamadı.", 404);
+
+        var validation = ValidateBlocks(blocks);
+        if (!validation.Succeeded) return ServiceResult<List<BlockDto>>.Fail(validation.Error ?? "Blok doğrulama hatası.", validation.StatusCode);
+
+        var now = DateTime.UtcNow;
+        var blockIdsToKeep = new HashSet<int>();
+
+        foreach (var blockDto in blocks)
+        {
+            NoteBlock block;
+            if (blockDto.Id > 0) // Güncelleme
+            {
+                block = note.Blocks.FirstOrDefault(b => b.Id == blockDto.Id);
+                if (block == null) return ServiceResult<List<BlockDto>>.Fail($"Blok ID: {blockDto.Id} bulunamadı.", 404);
+                
+                block.Type = blockDto.Type;
+                block.ContentJson = blockDto.Content.GetRawText();
+                block.Order = blockDto.Order ?? block.Order;
+                block.UpdatedAtUtc = now;
+                blockIdsToKeep.Add(block.Id);
+            }
+            else // Ekleme
+            {
+                block = new NoteBlock
+                {
+                    Type = blockDto.Type,
+                    Order = blockDto.Order ?? (note.Blocks.Any() ? note.Blocks.Max(b => b.Order) + 1 : 1),
+                    ContentJson = blockDto.Content.GetRawText(),
+                    CreatedAtUtc = now,
+                    UpdatedAtUtc = now
+                };
+                note.Blocks.Add(block);
+            }
+        }
+
+        // Silinmesi gereken blokları bul ve kaldır
+        var blocksToRemove = note.Blocks.Where(b => b.Id > 0 && !blockIdsToKeep.Contains(b.Id)).ToList();
+        foreach (var blockToRemove in blocksToRemove)
+        {
+            note.Blocks.Remove(blockToRemove);
+        }
+
+        note.UpdatedAtUtc = now;
+        NormalizeOrder(note);
+
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        var resultDto = note.Blocks.OrderBy(b => b.Order).Select(MapBlock).ToList();
+        return ServiceResult<List<BlockDto>>.Success(resultDto, 200);
     }
 
     public async Task<ServiceResult<BlockDto>> UpdateBlockAsync(int noteId, int blockId, BlockUpsertDto block, CancellationToken cancellationToken)
@@ -315,6 +385,17 @@ public class NoteService : INoteService
         if (note == null)
         {
             return ServiceResult<NoteDetailDto>.Fail("Not bulunamadi.", 404);
+        }
+
+        if (!note.CourseId.HasValue)
+        {
+            return ServiceResult<NoteDetailDto>.Fail("Yayinlamak icin ders secilmelidir.", 400);
+        }
+
+        var hasNote = await _repository.CourseHasNoteAsync(note.CourseId.Value, note.Id, cancellationToken);
+        if (hasNote)
+        {
+            return ServiceResult<NoteDetailDto>.Fail("Bu ders zaten bir nota bagli.", 409);
         }
 
         note.Status = NoteStatus.Published;

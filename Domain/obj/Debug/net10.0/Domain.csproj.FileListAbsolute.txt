@@ -13,3 +13,4 @@ C:\Projects\MehmetEminProje\Domain\obj\Debug\net10.0\Domain.dll
 C:\Projects\MehmetEminProje\Domain\obj\Debug\net10.0\refint\Domain.dll
 C:\Projects\MehmetEminProje\Domain\obj\Debug\net10.0\Domain.pdb
 C:\Projects\MehmetEminProje\Domain\obj\Debug\net10.0\ref\Domain.dll
+C:\Projects\MehmetEminProje\Domain\obj\Debug\net10.0\Domain.sourcelink.json

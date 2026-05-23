@@ -58,9 +58,9 @@ public class AdminNotesController : ControllerBase
     }
 
     [HttpPost("{id:int}/blocks")]
-    public async Task<IActionResult> AddBlocks(int id, [FromBody] List<BlockUpsertDto> blocks, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpsertBlocks(int id, [FromBody] List<BlockUpsertDto> blocks, CancellationToken cancellationToken)
     {
-        var result = await _noteService.AddBlocksAsync(id, blocks, cancellationToken);
+        var result = await _noteService.UpsertBlocksAsync(id, blocks, cancellationToken);
         return FromServiceResult(result);
     }
 

@@ -6,6 +6,14 @@
     padding: 20px;
 }
 
+.dark .editor-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1.5rem;
+    padding: 24px;
+    box-shadow: 0 30px 60px -30px rgba(15, 23, 42, 0.4);
+}
+
 .note-title-input {
     font-size: 3rem;
     font-weight: 900;
@@ -16,6 +24,10 @@
     color: #162d42; /* brand-navy */
     background: transparent;
     letter-spacing: -0.025em;
+}
+
+.note-title-input::placeholder {
+    color: #94a3b8;
 }
 
 .block-list {
@@ -31,10 +43,31 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.dark .block-wrapper {
+    border-color: #e2e8f0;
+}
+
 .block-wrapper:hover {
     background: white;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
     border-color: #f1f5f9;
+}
+
+.dark .note-title-input {
+    color: #162d42;
+}
+
+.dark .note-title-input::placeholder {
+    color: #94a3b8;
+}
+
+.dark .block-wrapper:hover {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.dark .block-content textarea {
+    color: #334155;
 }
 
 .block-header {
@@ -60,6 +93,11 @@
     border-radius: 4px;
 }
 
+.dark .block-type-badge {
+    color: #469d91;
+    background: #f0f9f8;
+}
+
 .block-content textarea {
     width: 100%;
     border: none;
@@ -69,6 +107,26 @@
     line-height: 1.7;
     color: #334155;
     resize: none;
+}
+
+.dark .block-content input,
+.dark .block-content textarea {
+    color: #334155;
+}
+
+.block-content input {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+.dark .block-content input::placeholder,
+.dark .block-content textarea::placeholder {
+    color: #94a3b8;
+}
+
+.dark .block-content input {
+    background: #ffffff;
+    border-color: #e2e8f0;
 }
 
 .btn-add-block {
@@ -103,7 +161,112 @@
     border: 1px solid #f1f5f9;
 }
 
+.dark .editor-actions-bar {
+    background: #000000;
+    border-color: #1f2937;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35);
+}
+
+.dark .editor-actions-bar button {
+    color: #e2e8f0;
+}
+
+.dark .editor-actions-bar .text-gray-500 {
+    color: #cbd5e1;
+}
+
+.dark .editor-actions-bar .text-gray-900 {
+    color: #e2e8f0;
+}
+
+.dark .editor-actions-bar .text-amber-600 {
+    color: #ffffff;
+}
+
+.dark .editor-actions-bar .border-gray-200 {
+    border-color: #334155;
+}
+
+.dark .editor-actions-bar .bg-amber-50 {
+    background: rgba(251, 191, 36, 0.15);
+}
+
+.dark .editor-actions-bar .bg-gray-50 {
+    background: rgba(148, 163, 184, 0.15);
+}
+
 /* Custom Block Decoration */
 .block-importantnote { border-left: 4px solid #469d91; background: #f0f9f8 !important; }
 .block-heading textarea { font-weight: 800; color: #162d42; font-size: 2rem; }
 .block-code textarea { font-family: 'JetBrains Mono', monospace; background: #0f172a; color: #f8fafc; padding: 1.5rem; border-radius: 1rem; }
+.dark .block-code textarea { background: #0f172a; }
+
+@media (max-width: 1024px) {
+    .editor-container {
+        max-width: 90%;
+    }
+}
+
+@media (max-width: 768px) {
+    .editor-container {
+        margin: 24px auto;
+        padding: 16px;
+    }
+
+    .note-title-input {
+        font-size: 2.25rem;
+    }
+
+    .editor-actions-bar {
+        width: calc(100% - 24px);
+        left: 12px;
+        transform: none;
+        bottom: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .note-title-input {
+        font-size: 1.9rem;
+    }
+
+    .block-wrapper {
+        padding: 1rem;
+    }
+}
+
+.dark .block-heading textarea { color: #162d42; }
+
+/* Dark theme overrides for add-block panel */
+.dark #addBlockPanel {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+.dark #addBlockPanel h3,
+.dark #addBlockPanel span,
+.dark #addBlockPanel .text-gray-700 {
+    color: #0f172a;
+}
+
+.dark #addBlockPanel .bg-gray-100 {
+    background: #f1f5f9;
+}
+
+.dark #addBlockPanel .border-gray-50 {
+    border-color: #e2e8f0;
+}
+
+.dark #addBlockPanel button [data-lucide] {
+    color: #162d42;
+    stroke: #162d42;
+}
+
+.dark #addBlockPanel button:hover [data-lucide] {
+    color: #ffffff;
+    stroke: #ffffff;
+}
