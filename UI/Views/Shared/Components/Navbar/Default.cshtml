@@ -2,16 +2,15 @@
     var showAdminLogin = ViewData["ShowAdminLogin"] as bool? ?? false;
 }
 
-<header id="header" class="h-16 bg-brand-navy text-white fixed top-0 right-0 left-0 z-30 flex items-center justify-between px-6 pr-36 border-b border-white/5 shadow-lg">
+<header id="header" class="h-16 bg-[#1b3a52] dark:bg-[#0b141b] text-white fixed top-0 right-0 left-0 z-30 flex items-center justify-between px-6 pr-36 border-b border-white/10 dark:border-slate-800 shadow-lg">
     <div class="flex items-center gap-4">
         <button id="sidebar-toggle" class="p-2 hover:bg-white/10 rounded-lg transition-colors text-brand-teal-light" title="Kenar çubuğunu gizle">
             <i data-lucide="menu" class="w-6 h-6"></i>
         </button>
         <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" onclick="window.location.href='/'">
-            <div class="w-10 h-10 flex items-center justify-center">
-                <div class="w-full h-full bg-brand-teal rounded-lg flex items-center justify-center font-bold text-xl text-white shadow-lg border border-white/10 overflow-hidden">
-                    <img src="/logo.png" alt="V" class="w-full h-full object-cover" onerror="this.style.display='none'" />
-                    <span class="logo-fallback">V</span>
+            <div class="w-11 h-11 flex items-center justify-center">
+                <div class="w-full h-full bg-white rounded-xl flex items-center justify-center shadow-lg border border-slate-200 overflow-hidden">
+                    <img src="/logo.png" alt="Vurmaz Online" class="w-full h-full object-contain" />
                 </div>
             </div>
             <h1 class="text-xl font-extrabold tracking-tight uppercase text-white">

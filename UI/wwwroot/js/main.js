@@ -116,12 +116,16 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (!noteState || !homeState) return;
 		noteState.classList.add("hidden");
 		homeState.classList.remove("hidden");
+		const zoom = document.getElementById('zoom-controls');
+		if (zoom) zoom.style.display = 'none';
 	};
 
 	const showNote = () => {
 		if (!noteState || !homeState) return;
 		noteState.classList.remove("hidden");
 		homeState.classList.add("hidden");
+		const zoom = document.getElementById('zoom-controls');
+		if (zoom) zoom.style.display = 'flex';
 	};
 
 	const updateNoteText = (note) => {
@@ -173,7 +177,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	};
 
 	const setSelectedNote = async (noteId) => {
-		if (!noteId) return;
+		if (!noteId) {
+			showHome();
+			setHomeButtonState(true);
+			return;
+		}
 		setLoading(true);
 		setHomeButtonState(false);
 		try {
@@ -243,6 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				const map = {
 					paragraph: 0,
 					heading: 1,
+					subheading: 9,
 					importantnote: 2,
 					video: 3,
 					image: 4,
@@ -256,6 +265,14 @@ document.addEventListener("DOMContentLoaded", () => {
 			return 0;
 		};
 
+		const getYoutubeId = (url) => {
+			if (!url) return "";
+			const val = url.toString();
+			if (val.includes("v=")) return val.split("v=")[1].split("&")[0];
+			if (val.includes("youtu.be/")) return val.split("youtu.be/")[1].split("?")[0];
+			return "";
+		};
+
 		blocks.sort((a, b) => a.order - b.order).forEach(block => {
 			const el = document.createElement("div");
 			el.className = "mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700";
@@ -263,35 +280,54 @@ document.addEventListener("DOMContentLoaded", () => {
 			const blockType = normalizeBlockType(block.type);
 			switch(blockType) {
 				case 0: // Paragraph
+					const pHtml = block.content.html || block.content.text || "";
+					el.innerHTML = `<div class="text-xl leading-relaxed text-slate-600 dark:text-slate-300">${pHtml}</div>`;
+					break;
 				case 7: // Quote
-					el.innerHTML = `<p class="text-xl leading-relaxed text-slate-600 dark:text-slate-300 font-medium">${block.content.text}</p>`;
+					el.innerHTML = `<p class="text-xl leading-relaxed text-slate-600 dark:text-slate-300">${block.content.text}</p>`;
 					break;
-				case 1: // Heading
+				case 1: { // Heading
 					const level = block.content.level || 2;
-					el.innerHTML = `<h${level} class="text-3xl font-black text-brand-navy dark:text-white mt-12 mb-6 tracking-tight uppercase border-l-4 border-brand-teal pl-6">${block.content.text}</h${level}>`;
+					const textColor = { black:'#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || '#162d42';
+					el.innerHTML = `<h${level} class="text-4xl font-black mt-12 mb-6 tracking-tight uppercase border-l-4 border-brand-teal pl-6" style="color:${textColor}">${block.content.text || ''}</h${level}>`;
 					break;
+				}
+				case 9: { // Subheading
+					const shColor = { black:'#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || '#162d42';
+					el.innerHTML = `<h3 class="text-2xl font-bold mt-6 mb-3 tracking-tight" style="color:${shColor}"><span class="subheading-dash">- </span>${block.content.text || ''}</h3>`;
+					break;
+				}
 				case 2: // ImportantNote
 					el.innerHTML = `
-						<div class="p-8 rounded-[2.5rem] bg-brand-teal text-white shadow-2xl shadow-brand-teal/20 backdrop-blur-sm border border-white/10">
+						<div class="p-8 rounded-[2.5rem] text-white shadow-2xl shadow-brand-teal/20 backdrop-blur-sm border border-white/10" style="background:#2d7a6f">
 							<div class="flex items-center gap-3 mb-3">
 								<i data-lucide="info" class="w-6 h-6"></i>
 								<h4 class="font-black text-xl italic underline underline-offset-8">Önemli Bilgi</h4>
 							</div>
-							<p class="text-lg opacity-90 leading-relaxed font-bold">${block.content.text}</p>
+							<p class="text-lg leading-relaxed font-bold">${block.content.text}</p>
 						</div>`;
 					break;
-				case 3: // Video
-					let videoId = "";
-					const url = block.content.url;
-					if (url.includes("v=")) videoId = url.split("v=")[1].split("&")[0];
-					else if (url.includes("youtu.be/")) videoId = url.split("youtu.be/")[1];
-					
-					el.innerHTML = `
-						<div class="aspect-video w-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5 bg-black">
-							<iframe class="w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
-						</div>
-						<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">Video İçeriği</p>`;
+				case 3: { // Video
+					const url = block.content.url || "";
+					const vId = getYoutubeId(url);
+					const caption = block.content.caption || "";
+					if (vId) {
+						el.innerHTML = `
+							<div class="aspect-video w-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5 bg-black">
+								<iframe class="w-full h-full" src="https://www.youtube.com/embed/${vId}" frameborder="0" allowfullscreen></iframe>
+							</div>
+							<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${caption || "Video İçeriği"}</p>`;
+					} else {
+						el.innerHTML = `
+							<div class="rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5 bg-black">
+								<video class="w-full h-auto" controls>
+									<source src="${url}" />
+								</video>
+							</div>
+							<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${caption || "Yüklenen Video"}</p>`;
+					}
 					break;
+				}
 				case 4: // Image
 					el.innerHTML = `
 						<div class="group relative rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5">
@@ -305,10 +341,13 @@ document.addEventListener("DOMContentLoaded", () => {
 							<pre class="text-brand-teal-light font-mono text-sm overflow-x-auto"><code>${block.content.code}</code></pre>
 						</div>`;
 					break;
-				case 8: // List
-					const items = block.content.items.map(i => `<li class="mb-2">${i}</li>`).join("");
-					el.innerHTML = `<ul class="list-disc pl-8 text-xl text-slate-600 dark:text-slate-300 space-y-2 font-medium">${items}</ul>`;
+				case 8: { // List
+					const intro = block.content?.intro || '';
+					const items = (block.content.items || []).filter(i => i.trim()).map(i => `<li class="mb-2">${i}</li>`).join("");
+					const introHtml = intro ? `<p class="text-lg text-slate-600 dark:text-slate-300 mb-3">${intro}</p>` : '';
+					el.innerHTML = `${introHtml}<ol class="list-decimal pl-8 text-xl text-slate-600 dark:text-slate-300 space-y-2">${items}</ol>`;
 					break;
+				}
 			}
 			area.appendChild(el);
 		});
@@ -358,7 +397,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	if (homeButton) {
-		homeButton.addEventListener("click", () => setSelectedNote(null));
+		homeButton.addEventListener("click", () => {
+			setSelectedNote(null);
+			showHome();
+			setHomeButtonState(true);
+		});
 	}
 
 	noteButtons.forEach((button) => {
@@ -388,6 +431,27 @@ document.addEventListener("DOMContentLoaded", () => {
 			setAdminLoginOpen(false);
 		}
 	});
+
+	let zoomLevel = 100;
+	const zoomArea = document.getElementById('note-content-area');
+	const zoomDisplay = document.getElementById('zoom-level');
+
+	window.zoomIn = () => {
+		zoomLevel = Math.min(zoomLevel + 10, 200);
+		applyZoom();
+	};
+	window.zoomOut = () => {
+		zoomLevel = Math.max(zoomLevel - 10, 50);
+		applyZoom();
+	};
+	window.zoomAuto = () => {
+		zoomLevel = 100;
+		applyZoom();
+	};
+	function applyZoom() {
+		if (zoomArea) zoomArea.style.zoom = zoomLevel / 100;
+		if (zoomDisplay) zoomDisplay.textContent = zoomLevel + '%';
+	}
 
 	const urlParams = new URLSearchParams(window.location.search);
 	const courseIdParam = urlParams.get('courseId');

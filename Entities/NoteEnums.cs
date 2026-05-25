@@ -16,5 +16,6 @@ public enum NoteBlockType
     DoubleImage = 5,
     Code = 6,
     Quote = 7,
-    List = 8
+    List = 8,
+    Subheading = 9
 }

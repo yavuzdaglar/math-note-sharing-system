@@ -40,6 +40,21 @@ public class CourseRepository : ICourseRepository
         var item = GetById(id);
         if (item != null)
         {
+            var notes = _context.Notes.Where(n => n.CourseId == id).ToList();
+            if (notes.Count > 0)
+            {
+                var now = DateTime.UtcNow;
+                foreach (var note in notes)
+                {
+                    note.CourseId = null;
+                    if (note.Status == NoteStatus.Published)
+                    {
+                        note.Status = NoteStatus.Draft;
+                        note.PublishedAtUtc = null;
+                    }
+                    note.UpdatedAtUtc = now;
+                }
+            }
             _context.Courses.Remove(item);
             _context.SaveChanges();
         }

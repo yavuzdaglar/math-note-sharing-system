@@ -520,6 +520,11 @@ public class NoteService : INoteService
         switch (block.Type)
         {
             case NoteBlockType.Paragraph:
+                if (!TryGetString(block.Content, "html", out _) && !TryGetString(block.Content, "text", out _))
+                {
+                    return "Metin bloklari icin 'html' veya 'text' zorunlu.";
+                }
+                return null;
             case NoteBlockType.Heading:
             case NoteBlockType.ImportantNote:
             case NoteBlockType.Quote:
@@ -529,15 +534,15 @@ public class NoteService : INoteService
                 }
                 return null;
             case NoteBlockType.Video:
-                if (!TryGetString(block.Content, "url", out var videoUrl) || !IsValidUrl(videoUrl))
+                if (!TryGetString(block.Content, "url", out var videoUrl))
                 {
-                    return "Video bloklari icin gecerli 'url' zorunlu.";
+                    return null;
                 }
                 return null;
             case NoteBlockType.Image:
-                if (!TryGetString(block.Content, "url", out var imageUrl) || !IsValidUrl(imageUrl))
+                if (!TryGetString(block.Content, "url", out var imageUrl))
                 {
-                    return "Image bloklari icin gecerli 'url' zorunlu.";
+                    return null;
                 }
                 return null;
             case NoteBlockType.DoubleImage:
@@ -556,6 +561,12 @@ public class NoteService : INoteService
                 if (!TryGetStringArray(block.Content, "items", 1))
                 {
                     return "List bloklari icin en az 1 'items' zorunlu.";
+                }
+                return null;
+            case NoteBlockType.Subheading:
+                if (!TryGetStringLenient(block.Content, "text", out _))
+                {
+                    return "Alt baslik icin 'text' zorunlu.";
                 }
                 return null;
             default:
@@ -586,6 +597,23 @@ public class NoteService : INoteService
         return true;
     }
 
+    private static bool TryGetStringLenient(JsonElement content, string property, out string value)
+    {
+        value = string.Empty;
+        if (!content.TryGetProperty(property, out var element))
+        {
+            return false;
+        }
+
+        if (element.ValueKind != JsonValueKind.String)
+        {
+            return false;
+        }
+
+        value = element.GetString() ?? string.Empty;
+        return true;
+    }
+
     private static bool TryGetStringArray(JsonElement content, string property, int minLength)
     {
         if (!content.TryGetProperty(property, out var element))
@@ -604,7 +632,7 @@ public class NoteService : INoteService
             return false;
         }
 
-        return items.All(i => i.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(i.GetString()));
+        return items.Any(i => i.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(i.GetString()));
     }
 
     private static bool IsValidUrl(string url)

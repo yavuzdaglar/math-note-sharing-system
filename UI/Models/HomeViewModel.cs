@@ -5,18 +5,6 @@ public class HomeViewModel
     public List<SidebarCategoryViewModel> Categories { get; set; } = new();
 }
 
-public class CoursesPageViewModel
-{
-    public List<SidebarCategoryViewModel> Categories { get; set; } = new();
-    public List<Application.DTOs.CourseDto> Courses { get; set; } = new();
-}
-
-public class CourseCategoriesPageViewModel
-{
-    public List<SidebarCategoryViewModel> Categories { get; set; } = new();
-    public List<Application.DTOs.CourseCategoryDto> CourseCategories { get; set; } = new();
-}
-
 public class SidebarCategoryViewModel
 {
     public string Id { get; set; } = string.Empty;

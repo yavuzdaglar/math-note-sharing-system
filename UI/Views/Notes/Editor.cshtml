@@ -9,44 +9,27 @@
     <span>Geri</span>
 </button>
 
+<div class="fixed top-4 left-1/2 z-[9999] -translate-x-1/2 flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-700 shadow-md backdrop-blur dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200">
+    <button id="undo-btn" type="button" onclick="undoAction()" class="flex items-center gap-2 rounded-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Geri al">
+        <i data-lucide="corner-up-left" class="w-4 h-4"></i>
+        <span>Geri Al</span>
+    </button>
+    <div class="h-5 w-px bg-slate-200 dark:bg-slate-700"></div>
+    <button id="redo-btn" type="button" onclick="redoAction()" class="flex items-center gap-2 rounded-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Yinele">
+        <i data-lucide="corner-up-right" class="w-4 h-4"></i>
+        <span>Yinele</span>
+    </button>
+</div>
+
 <div class="editor-container">
     <input type="text" id="noteTitle" class="note-title-input" placeholder="Not Başlığı..." />
-    
+
     <div id="blockList" class="block-list">
         <!-- Bloklar buraya gelecek -->
     </div>
+</div>
 
-    <!-- Yayınlama Modalı -->
-    <div id="publishModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closePublishModal()"></div>
-        <div class="bg-white text-slate-900 relative z-10 w-full max-w-lg rounded-[3rem] p-10 shadow-2xl">
-            <h3 class="text-2xl font-black text-slate-900 mb-2">Notu Yayınla</h3>
-            <p class="text-slate-500 text-sm mb-8 font-medium">Bu notun hangi ders altında görüneceğini seçin.</p>
-            
-            <div class="space-y-6">
-                <div>
-                    <label class="block text-xs font-black text-slate-400 uppercase mb-2 ml-2">Kategori</label>
-                    <select id="categorySelect" onchange="loadCourses(this.value)" class="w-full p-4 bg-slate-50 text-slate-900 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-brand-teal/10">
-                        <option value="">Kategori Seçin...</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-black text-slate-400 uppercase mb-2 ml-2">Ders</label>
-                    <select id="courseSelect" class="w-full p-4 bg-slate-50 text-slate-900 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-brand-teal/10">
-                        <option value="">Önce Kategori Seçin...</option>
-                    </select>
-                </div>
-
-                <div class="pt-4 flex gap-3">
-                    <button onclick="confirmPublish()" class="flex-1 py-5 bg-brand-teal text-white font-black rounded-2xl shadow-xl shadow-teal-100 hover:bg-brand-teal-light transition-all transform hover:scale-[1.02]">Onayla ve Yayınla</button>
-                    <button onclick="closePublishModal()" class="px-8 py-5 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-all">İptal</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-<!-- Blok Tipi Seçme Paneli (Tailwind) -->
+<!-- Blok Tipi Seçme Paneli -->
 <div id="addBlockPanel" class="mt-12 p-8 bg-white rounded-3xl shadow-xl border border-gray-100 max-w-2xl mx-auto">
     <h3 class="text-center text-lg font-bold text-brand-navy mb-6">Yeni Bir Blok Ekleyin</h3>
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -55,6 +38,12 @@
                 <i data-lucide="heading" class="w-6 h-6"></i>
             </div>
             <span class="text-sm font-bold text-gray-700">Başlık</span>
+        </button>
+        <button onclick="addBlock('Subheading')" class="flex flex-col items-center p-4 rounded-2xl border-2 border-gray-50 hover:border-brand-teal hover:bg-teal-50 transition-all duration-300 group">
+            <div class="bg-gray-100 p-3 rounded-xl group-hover:bg-brand-teal group-hover:text-white transition-colors mb-3">
+                <i data-lucide="subtitles" class="w-6 h-6"></i>
+            </div>
+            <span class="text-sm font-bold text-gray-700">Alt Başlık</span>
         </button>
         <button onclick="addBlock('Paragraph')" class="flex flex-col items-center p-4 rounded-2xl border-2 border-gray-50 hover:border-brand-teal hover:bg-teal-50 transition-all duration-300 group">
             <div class="bg-gray-100 p-3 rounded-xl group-hover:bg-brand-teal group-hover:text-white transition-colors mb-3">
@@ -86,6 +75,12 @@
             </div>
             <span class="text-sm font-bold text-gray-700">Kod</span>
         </button>
+        <button onclick="addBlock('List')" class="flex flex-col items-center p-4 rounded-2xl border-2 border-gray-50 hover:border-brand-teal hover:bg-teal-50 transition-all duration-300 group">
+            <div class="bg-gray-100 p-3 rounded-xl group-hover:bg-brand-teal group-hover:text-white transition-colors mb-3">
+                <i data-lucide="list" class="w-6 h-6"></i>
+            </div>
+            <span class="text-sm font-bold text-gray-700">Liste</span>
+        </button>
     </div>
 </div>
 
@@ -95,40 +90,84 @@
     </button>
     <button type="button" onclick="previewNote()" class="px-6 py-2 rounded-full text-sm font-bold text-gray-500 hover:bg-gray-50 transition-all">Önizle</button>
     <button type="button" onclick="saveNote(false)" class="px-6 py-2 rounded-full text-sm font-bold text-gray-900 border border-gray-200 hover:bg-gray-50 transition-all">Taslak Kaydet</button>
-    <button type="button" onclick="saveNote(true)" class="px-8 py-2 rounded-full text-sm font-bold text-white bg-brand-teal hover:bg-brand-teal-light shadow-lg shadow-teal-100 transition-all">Yayınla</button>
+    <button type="button" onclick="saveNote(true)"  class="px-8 py-2 rounded-full text-sm font-bold text-white bg-brand-teal hover:bg-brand-teal-light shadow-lg shadow-teal-100 transition-all">Yayınla</button>
+</div>
+
+<!-- Önizleme Modalı -->
+<div id="previewModal" class="hidden fixed inset-0 z-[9998] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closePreviewModal()"></div>
+    <div class="bg-white text-slate-900 relative z-10 w-full max-w-4xl rounded-[3rem] p-10 shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Önizleme</p>
+                <h3 id="previewTitle" class="text-2xl font-black text-slate-900"></h3>
+            </div>
+            <button onclick="closePreviewModal()" class="px-6 py-2 bg-slate-100 text-slate-600 font-bold rounded-full hover:bg-slate-200 transition-all">Kapat</button>
+        </div>
+        <div id="previewContent" class="space-y-8 max-h-[70vh] overflow-y-auto pr-2"></div>
+    </div>
+</div>
+
+<!-- Yayınlama Modalı -->
+<div id="publishModal" class="hidden fixed inset-0 z-[9998] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closePublishModal()"></div>
+    <div class="bg-white text-slate-900 relative z-10 w-full max-w-lg rounded-[3rem] p-10 shadow-2xl">
+        <h3 class="text-2xl font-black text-slate-900 mb-2">Notu Yayınla</h3>
+        <p class="text-slate-500 text-sm mb-8 font-medium">Bu notun hangi ders altında görüneceğini seçin.</p>
+        <div class="space-y-6">
+            <div>
+                <label class="block text-xs font-black text-slate-400 uppercase mb-2 ml-2">Kategori</label>
+                <select id="categorySelect" onchange="loadCourses(this.value)" class="w-full p-4 bg-slate-50 text-slate-900 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-brand-teal/10">
+                    <option value="">Kategori Seçin...</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-black text-slate-400 uppercase mb-2 ml-2">Ders</label>
+                <select id="courseSelect" class="w-full p-4 bg-slate-50 text-slate-900 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-brand-teal/10">
+                    <option value="">Önce Kategori Seçin...</option>
+                </select>
+            </div>
+            <div class="pt-4 flex gap-3">
+                <button onclick="confirmPublish()" class="flex-1 py-5 bg-brand-teal text-white font-black rounded-2xl shadow-xl shadow-teal-100 hover:bg-brand-teal-light transition-all transform hover:scale-[1.02]">Onayla ve Yayınla</button>
+                <button onclick="closePublishModal()" class="px-8 py-5 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-all">İptal</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
     <script src="~/js/block-editor.js"></script>
     <script>
         const noteId = @(ViewBag.NoteId ?? 0);
-        
+
         async function fetchCategories() {
-            const resp = await fetch('https://localhost:7078/api/coursecategories');
-            const categories = await resp.json();
-            const select = document.getElementById('categorySelect');
-            categories.forEach(c => {
-                select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-            });
+            try {
+                const resp = await fetch('https://localhost:7078/api/coursecategories');
+                const cats = await resp.json();
+                const sel = document.getElementById('categorySelect');
+                cats.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
+            } catch (e) { console.error('fetchCategories:', e); }
         }
 
-        async function loadCourses(categoryId) {
-            const select = document.getElementById('courseSelect');
-            select.innerHTML = '<option value="">Ders Seçin...</option>';
-            if (!categoryId) return;
-
-            const resp = await fetch('https://localhost:7078/api/courses');
-            const courses = await resp.json();
-            const filtered = courses.filter(c => c.courseCategoryId == categoryId);
-            filtered.forEach(c => {
-                select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-            });
+        async function loadCourses(catId) {
+            const sel = document.getElementById('courseSelect');
+            sel.innerHTML = '<option value="">Ders Seçin...</option>';
+            if (!catId) return;
+            try {
+                const resp = await fetch('https://localhost:7078/api/courses');
+                const courses = await resp.json();
+                courses.filter(c => c.courseCategoryId == catId)
+                       .forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
+            } catch (e) { console.error('loadCourses:', e); }
         }
 
         window.onload = async () => {
             await fetchCategories();
             if (noteId > 0) {
                 await loadNote(noteId);
+            }
+            if (window.initializeHistory) {
+                window.initializeHistory();
             }
         };
     </script>

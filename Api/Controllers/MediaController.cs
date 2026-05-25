@@ -18,7 +18,10 @@ public class MediaController : ControllerBase
     {
         if (file == null || file.Length == 0) return BadRequest("Dosya secilmedi.");
 
-        var uploads = Path.Combine(_environment.WebRootPath, "uploads");
+        var root = _environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
+        if (!Directory.Exists(root)) Directory.CreateDirectory(root);
+
+        var uploads = Path.Combine(root, "uploads");
         if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
         var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";

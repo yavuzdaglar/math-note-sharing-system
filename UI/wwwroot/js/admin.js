@@ -1,3 +1,26 @@
+function showConfirm(message, confirmText = 'Sil', cancelText = 'İptal') {
+    return new Promise(resolve => {
+        const isDark = document.documentElement.classList.contains('dark');
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding-top:100px;opacity:0;transition:opacity 0.25s ease';
+        const card = document.createElement('div');
+        card.style.cssText = `background:${isDark?'#0f172a':'white'};border-radius:1.5rem;padding:2rem;max-width:420px;width:90%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);transform:translateY(-30px);transition:transform 0.3s ease;border:1px solid ${isDark?'#334155':'#e2e8f0'}`;
+        card.innerHTML = `
+            <p style="font-size:1.05rem;font-weight:700;color:${isDark?'#e2e8f0':'#162d42'};margin:0 0 1.5rem;line-height:1.6">${message}</p>
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end">
+                <button id="confirm-cancel" style="padding:0.75rem 1.5rem;border-radius:0.75rem;border:1px solid ${isDark?'#334155':'#e2e8f0'};background:${isDark?'#1e293b':'white'};color:${isDark?'#94a3b8':'#64748b'};font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.15s">${cancelText}</button>
+                <button id="confirm-ok" style="padding:0.75rem 1.5rem;border-radius:0.75rem;border:none;background:#ef4444;color:white;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.15s">${confirmText}</button>
+            </div>`;
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        requestAnimationFrame(() => { overlay.style.opacity = '1'; card.style.transform = 'translateY(0)'; });
+        const close = (v) => { overlay.style.opacity = '0'; card.style.transform = 'translateY(-30px)'; setTimeout(() => { overlay.remove(); resolve(v); }, 250); };
+        overlay.querySelector('#confirm-cancel').onclick = () => close(false);
+        overlay.querySelector('#confirm-ok').onclick = () => close(true);
+        overlay.onclick = (e) => { if (e.target === overlay) close(false); };
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const apiBase = "https://localhost:7078/api";
     // Sekme değiştirme işlevselliği
@@ -79,9 +102,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Not silme fonksiyonu
     window.deleteNote = async function (id, title) {
-        if (!confirm(`'${title}' başlıklı notu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
-            return;
-        }
+        const confirmed = await showConfirm(`<strong>${title}</strong> başlıklı notu silmek istediğinizden emin misiniz?<br><span style="font-size:0.85rem;font-weight:400;color:#94a3b8">Bu işlem geri alınamaz.</span>`);
+        if (!confirmed) return;
 
         try {
             const response = await fetch(`https://localhost:7078/api/admin/notes/${id}`, {
@@ -132,6 +154,8 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     window.deleteCategory = async function (id) {
+        const confirmed = await showConfirm('Bu kategoriyi silmek istediğinizden emin misiniz?<br><span style="font-size:0.85rem;font-weight:400;color:#94a3b8">Kategoriye bağlı dersler etkilenebilir.</span>');
+        if (!confirmed) return;
         await fetch(`${apiBase}/CourseCategories/${id}`, { method: 'DELETE' });
         location.reload();
     };
@@ -149,6 +173,8 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     window.deleteCourse = async function (id) {
+        const confirmed = await showConfirm('Bu dersi silmek istediğinizden emin misiniz?<br><span style="font-size:0.85rem;font-weight:400;color:#94a3b8">Derse bağlı notlar yayından kalkabilir.</span>');
+        if (!confirmed) return;
         await fetch(`${apiBase}/Courses/${id}`, { method: 'DELETE' });
         location.reload();
     };

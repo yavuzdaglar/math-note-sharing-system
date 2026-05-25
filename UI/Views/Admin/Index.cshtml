@@ -14,8 +14,8 @@
 
 <div class="min-h-screen bg-[#f1f5f9] dark:bg-[#0d161e] dark:text-slate-100 pb-20">
     <!-- Header Section: Gradient Glassmorphism -->
-    <div class="relative overflow-hidden bg-brand-navy pb-32 pt-16">
-        <div class="absolute inset-0 bg-gradient-to-br from-brand-navy via-slate-900 to-brand-teal opacity-50"></div>
+    <div class="relative overflow-hidden bg-[#1b3a52] dark:bg-[#0b141b] pb-32 pt-16">
+        <div class="absolute inset-0 bg-gradient-to-br from-[#1b3a52] via-[#142636] to-brand-teal opacity-50 dark:from-[#0b141b] dark:via-[#0b141b] dark:to-[#12303f]"></div>
         <div class="absolute -top-24 -right-24 w-96 h-96 bg-brand-teal opacity-20 blur-[100px] rounded-full"></div>
         <div class="relative max-w-7xl mx-auto px-6">
             <div class="flex flex-col md:flex-row justify-between items-center gap-6">
@@ -152,11 +152,11 @@
 <!-- Modallar -->
 <div id="catModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCatModal()"></div>
-    <div class="bg-white relative z-10 w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
-        <h3 class="text-2xl font-black text-slate-900 mb-2">Kategori Oluştur</h3>
-        <p class="text-slate-500 text-sm mb-8 font-medium">Sisteme yeni bir ana başlık tanımlayın.</p>
+    <div class="bg-white dark:bg-[#0f172a] dark:text-slate-100 relative z-10 w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
+        <h3 class="text-2xl font-black text-slate-900 dark:text-slate-100 mb-2">Kategori Oluştur</h3>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mb-8 font-medium">Sisteme yeni bir ana başlık tanımlayın.</p>
         <input type="text" id="catName"
-            class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl mb-8 outline-none focus:ring-4 focus:ring-brand-teal/10"
+            class="w-full p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-2xl mb-8 outline-none focus:ring-4 focus:ring-brand-teal/10 dark:placeholder:text-slate-500"
             placeholder="Örn: Mühendislik" />
         <button onclick="saveCategory()"
             class="w-full py-5 bg-brand-teal text-white font-black rounded-2xl shadow-xl shadow-teal-100 hover:bg-brand-teal-light transition-all">Kategoriyi
@@ -166,22 +166,22 @@
 
 <div id="courseModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCourseModal()"></div>
-    <div class="bg-white relative z-10 w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
-        <h3 class="text-2xl font-black text-slate-900 mb-2">Ders Tanımla</h3>
-        <p class="text-slate-500 text-sm mb-8 font-medium">Notların bağlanacağı yeni dersi oluşturun.</p>
+    <div class="bg-white dark:bg-[#0f172a] dark:text-slate-100 relative z-10 w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
+        <h3 class="text-2xl font-black text-slate-900 dark:text-slate-100 mb-2">Ders Tanımla</h3>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mb-8 font-medium">Notların bağlanacağı yeni dersi oluşturun.</p>
 
-        <label class="block text-xs font-black text-slate-400 uppercase mb-2 ml-2">Kategori</label>
+        <label class="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase mb-2 ml-2">Kategori</label>
         <select id="courseCatSelect"
-            class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl mb-4 outline-none focus:ring-4 focus:ring-brand-teal/10">
+            class="w-full p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-2xl mb-4 outline-none focus:ring-4 focus:ring-brand-teal/10">
             @foreach (var cat in categories)
             {
                 <option value="@cat.Id">@cat.Name</option>
             }
         </select>
 
-        <label class="block text-xs font-black text-slate-400 uppercase mb-2 ml-2">Ders Adı</label>
+        <label class="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase mb-2 ml-2">Ders Adı</label>
         <input type="text" id="courseName"
-            class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl mb-8 outline-none focus:ring-4 focus:ring-brand-teal/10"
+            class="w-full p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-2xl mb-8 outline-none focus:ring-4 focus:ring-brand-teal/10 dark:placeholder:text-slate-500"
             placeholder="Örn: Kalkülüs" />
 
         <button onclick="saveCourse()"
