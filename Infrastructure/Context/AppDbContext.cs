@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<CourseCategory> CourseCategories => Set<CourseCategory>();
     public DbSet<Note> Notes => Set<Note>();
     public DbSet<NoteBlock> NoteBlocks => Set<NoteBlock>();
+    public DbSet<Admin> Admins => Set<Admin>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,6 +50,14 @@ public class AppDbContext : DbContext
             entity.Property(b => b.Type).IsRequired();
             entity.Property(b => b.ContentJson).IsRequired();
             entity.HasIndex(b => new { b.NoteId, b.Order }).IsUnique();
+        });
+
+        modelBuilder.Entity<Admin>(entity =>
+        {
+            entity.Property(a => a.Username).HasMaxLength(50).IsRequired();
+            entity.Property(a => a.PasswordHash).IsRequired();
+            entity.Property(a => a.Salt).IsRequired();
+            entity.HasIndex(a => a.Username).IsUnique();
         });
 
     }

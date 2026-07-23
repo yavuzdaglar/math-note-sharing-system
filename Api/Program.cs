@@ -22,11 +22,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<ICourseCategoryRepository, CourseCategoryRepository>();
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<INoteRepository, NoteRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 
 // 3. Services (Application Katmanı)
 builder.Services.AddScoped<ICourseCategoryService, CourseCategoryService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddScoped<IAdminAuthService, AdminAuthService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 builder.Services.AddControllers()
 	.AddJsonOptions(options =>

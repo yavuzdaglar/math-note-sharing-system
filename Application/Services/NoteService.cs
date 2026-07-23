@@ -569,6 +569,43 @@ public class NoteService : INoteService
                     return "Alt baslik icin 'text' zorunlu.";
                 }
                 return null;
+            case NoteBlockType.Grid:
+                if (!block.Content.TryGetProperty("columns", out var colsEl) || colsEl.ValueKind != JsonValueKind.Array || colsEl.GetArrayLength() < 2)
+                {
+                    return "Grid en az 2 kolon icermelidir.";
+                }
+                if (!block.Content.TryGetProperty("columnBlocks", out var colBlocksEl) || colBlocksEl.ValueKind != JsonValueKind.Array)
+                {
+                    return "Grid 'columnBlocks' zorunludur.";
+                }
+                if (colsEl.GetArrayLength() != colBlocksEl.GetArrayLength())
+                {
+                    return "Grid 'columns' ve 'columnBlocks' esit sayida olmalidir.";
+                }
+                foreach (var colBlock in colBlocksEl.EnumerateArray())
+                {
+                    if (colBlock.ValueKind != JsonValueKind.Array) continue;
+                    foreach (var sub in colBlock.EnumerateArray())
+                    {
+                        if (sub.ValueKind != JsonValueKind.Object) continue;
+                        if (!sub.TryGetProperty("type", out var typeEl) || typeEl.ValueKind != JsonValueKind.String)
+                        {
+                            return "Grid icindeki bloklarda 'type' zorunludur.";
+                        }
+                        if (!sub.TryGetProperty("content", out var subContent) || subContent.ValueKind != JsonValueKind.Object)
+                        {
+                            return "Grid icindeki bloklarda 'content' zorunludur.";
+                        }
+                        var subBlock = new BlockUpsertDto
+                        {
+                            Type = Enum.Parse<NoteBlockType>(typeEl.GetString()!, true),
+                            Content = subContent
+                        };
+                        var subError = ValidateBlockContent(subBlock);
+                        if (subError != null) return subError;
+                    }
+                }
+                return null;
             default:
                 return "Bilinmeyen blok tipi.";
         }

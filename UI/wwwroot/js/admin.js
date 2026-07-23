@@ -179,6 +179,74 @@ document.addEventListener('DOMContentLoaded', function () {
         location.reload();
     };
 
+    // Admin yönetimi
+    window.openAdminModal = function () {
+        document.getElementById('adminUsername').value = '';
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('adminModal').classList.remove('hidden');
+    };
+    window.closeAdminModal = function () { document.getElementById('adminModal').classList.add('hidden'); };
+
+    async function loadAdmins() {
+        const tableBody = document.getElementById('adminsTableBody');
+        if (!tableBody) return;
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-8">Yükleniyor...</td></tr>';
+        try {
+            const response = await fetch(`${apiBase}/admin/manage`);
+            const admins = await response.json();
+            if (admins.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-8">Henüz admin bulunamadı.</td></tr>';
+                return;
+            }
+            tableBody.innerHTML = '';
+            admins.forEach(a => {
+                tableBody.innerHTML += `
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="px-8 py-5"><div class="font-bold text-slate-800">${a.username}</div></td>
+                        <td class="px-8 py-5 text-slate-500">${new Date(a.createdAtUtc).toLocaleDateString('tr-TR')}</td>
+                        <td class="px-8 py-5 text-right">
+                            <button onclick="deleteAdmin(${a.id})" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-sm rounded-lg transition-colors">Sil</button>
+                        </td>
+                    </tr>`;
+            });
+            if (window.lucide) window.lucide.createIcons();
+        } catch (e) {
+            tableBody.innerHTML = `<tr><td colspan="3" class="text-center p-8 text-red-500">${e.message}</td></tr>`;
+        }
+    }
+
+    window.saveAdmin = async function () {
+        const username = document.getElementById('adminUsername').value;
+        const password = document.getElementById('adminPassword').value;
+        if (!username || !password) { alert('Kullanıcı adı ve şifre gerekli.'); return; }
+        const response = await fetch(`${apiBase}/admin/manage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        if (response.ok) {
+            closeAdminModal();
+            loadAdmins();
+        } else {
+            const err = await response.json();
+            alert(err.message || 'Admin oluşturulamadı.');
+        }
+    };
+
+    window.deleteAdmin = async function (id) {
+        const confirmed = await showConfirm('Bu admini silmek istediğinizden emin misiniz?<br><span style="font-size:0.85rem;font-weight:400;color:#94a3b8">Bu işlem geri alınamaz.</span>');
+        if (!confirmed) return;
+        await fetch(`${apiBase}/admin/manage/${id}`, { method: 'DELETE' });
+        loadAdmins();
+    };
+
+    // Sekme değiştiğinde adminleri yükle
+    const origSwitchTab = window.switchTab;
+    window.switchTab = function (tabName) {
+        if (tabName === 'admins') loadAdmins();
+        origSwitchTab(tabName);
+    };
+
     // Başlangıçta notları yükle
     loadNotes();
 

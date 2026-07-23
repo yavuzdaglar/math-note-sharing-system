@@ -17,5 +17,6 @@ public enum NoteBlockType
     Code = 6,
     Quote = 7,
     List = 8,
-    Subheading = 9
+    Subheading = 9,
+    Grid = 10
 }

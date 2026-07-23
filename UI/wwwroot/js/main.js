@@ -236,11 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	};
 
-	const renderBlocksPublic = (blocks) => {
-		const area = document.getElementById("note-content-area");
-		if (!area) return;
-		area.innerHTML = "";
-
+	function renderBlocksIntoContainer(container, blocks) {
 		const normalizeBlockType = (value) => {
 			if (value === null || value === undefined) return 0;
 			if (typeof value === "number") return value;
@@ -258,7 +254,8 @@ document.addEventListener("DOMContentLoaded", () => {
 					doubleimage: 5,
 					code: 6,
 					quote: 7,
-					list: 8
+					list: 8,
+					grid: 10
 				};
 				return map[normalized] ?? 0;
 			}
@@ -275,25 +272,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		blocks.sort((a, b) => a.order - b.order).forEach(block => {
 			const el = document.createElement("div");
-			el.className = "mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700";
+			const isTopLevel = container.id === "note-content-area";
+			const _isDark = document.documentElement.classList.contains('dark');
+			el.className = isTopLevel ? "mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700" : "mb-4";
 
 			const blockType = normalizeBlockType(block.type);
 			switch(blockType) {
-				case 0: // Paragraph
+				case 0: { // Paragraph
 					const pHtml = block.content.html || block.content.text || "";
-					el.innerHTML = `<div class="text-xl leading-relaxed text-slate-600 dark:text-slate-300">${pHtml}</div>`;
+					el.innerHTML = `<div class="p-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 shadow-sm text-lg leading-relaxed text-slate-700 dark:text-slate-300 break-words">${pHtml}</div>`;
 					break;
-				case 7: // Quote
-					el.innerHTML = `<p class="text-xl leading-relaxed text-slate-600 dark:text-slate-300">${block.content.text}</p>`;
+				}
+				case 7: { // Quote
+					const qHtml = block.content.text || block.content.html || "";
+					el.innerHTML = `<div class="p-6 rounded-2xl border-l-4 border-brand-teal bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm text-lg leading-relaxed italic text-slate-600 dark:text-slate-300">${qHtml}</div>`;
 					break;
+				}
 				case 1: { // Heading
 					const level = block.content.level || 2;
-					const textColor = { black:'#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || '#162d42';
+					const textColor = { black: _isDark ? '#e2e8f0' : '#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || (_isDark ? '#e2e8f0' : '#162d42');
 					el.innerHTML = `<h${level} class="text-4xl font-black mt-12 mb-6 tracking-tight uppercase border-l-4 border-brand-teal pl-6" style="color:${textColor}">${block.content.text || ''}</h${level}>`;
 					break;
 				}
 				case 9: { // Subheading
-					const shColor = { black:'#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || '#162d42';
+					const shColor = { black: _isDark ? '#e2e8f0' : '#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || (_isDark ? '#e2e8f0' : '#162d42');
 					el.innerHTML = `<h3 class="text-2xl font-bold mt-6 mb-3 tracking-tight" style="color:${shColor}"><span class="subheading-dash">- </span>${block.content.text || ''}</h3>`;
 					break;
 				}
@@ -335,22 +337,73 @@ document.addEventListener("DOMContentLoaded", () => {
 							${block.content.caption ? `<div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent text-white font-bold text-sm">${block.content.caption}</div>` : ""}
 						</div>`;
 					break;
+				case 5: { // DoubleImage
+					const urls = block.content?.urls || [];
+					const dCap = block.content?.caption || '';
+					const imgs = urls.map(u => `<div class="rounded-2xl overflow-hidden shadow-md"><img src="${u || ''}" class="w-full h-40 object-cover" onerror="this.src='https://via.placeholder.com/400x200?text=Gecersiz+URL'" /></div>`).join('');
+					el.innerHTML = `<div class="grid grid-cols-2 gap-4">${imgs}</div>${dCap ? `<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${dCap}</p>` : ''}`;
+					break;
+				}
 				case 6: // Code
 					el.innerHTML = `
 						<div class="p-8 rounded-[2.5rem] bg-slate-900 border border-white/10 shadow-2xl">
-							<pre class="text-brand-teal-light font-mono text-sm overflow-x-auto"><code>${block.content.code}</code></pre>
+							<pre class="text-brand-teal-light font-mono text-sm whitespace-pre-wrap break-words"><code>${block.content.code}</code></pre>
 						</div>`;
 					break;
 				case 8: { // List
 					const intro = block.content?.intro || '';
-					const items = (block.content.items || []).filter(i => i.trim()).map(i => `<li class="mb-2">${i}</li>`).join("");
+					const items = (block.content.items || []).filter(i => i.trim()).map(i => `<li class="mb-2">${i.trim()}</li>`).join("");
 					const introHtml = intro ? `<p class="text-lg text-slate-600 dark:text-slate-300 mb-3">${intro}</p>` : '';
 					el.innerHTML = `${introHtml}<ol class="list-decimal pl-8 text-xl text-slate-600 dark:text-slate-300 space-y-2">${items}</ol>`;
 					break;
 				}
+				case 10: { // Grid
+					const cols = block.content.columns || [1, 1];
+					const colBlocks = block.content.columnBlocks || [];
+					const isMatrix = block.content.layout === 'matrix2x2' || (cols.length === 4 && colBlocks.length === 4);
+					const total = cols.reduce((a, b) => a + b, 0);
+					const gridWrapper = document.createElement('div');
+					gridWrapper.className = 'grid gap-6 rounded-[2rem] border border-slate-200 dark:border-slate-700 p-6 bg-slate-50/50 dark:bg-slate-800/50 shadow-inner';
+					gridWrapper.style.gridTemplateColumns = isMatrix ? '1fr 1fr' : cols.map(v => `${(v / total) * 100}%`).join(' ');
+					colBlocks.forEach(subBlocks => {
+						const col = document.createElement('div');
+						col.className = 'grid-col space-y-4';
+						renderBlocksIntoContainer(col, subBlocks);
+						gridWrapper.appendChild(col);
+					});
+					el.appendChild(gridWrapper);
+					break;
+				}
 			}
-			area.appendChild(el);
+			container.appendChild(el);
 		});
+	}
+
+	const normalizeBlocksForPublic = (blockArray) => {
+		if (!blockArray) return;
+		blockArray.forEach(b => {
+			if (typeof b.type === 'number' || (typeof b.type === 'string' && /^\d+$/.test(b.type))) {
+				const numMap = { 0:'Paragraph',1:'Heading',2:'ImportantNote',3:'Video',4:'Image',5:'DoubleImage',6:'Code',7:'Quote',8:'List',9:'Subheading',10:'Grid' };
+				const n = typeof b.type === 'number' ? b.type : parseInt(b.type, 10);
+				b.type = numMap[n] || 'Paragraph';
+			} else if (typeof b.type === 'string') {
+				const strMap = { paragraph:'Paragraph',heading:'Heading',subheading:'Subheading',importantnote:'ImportantNote',video:'Video',image:'Image',doubleimage:'DoubleImage',code:'Code',quote:'Quote',list:'List',grid:'Grid' };
+				b.type = strMap[b.type.trim().toLowerCase()] || 'Paragraph';
+			} else {
+				b.type = 'Paragraph';
+			}
+			if (b.content && b.content.columnBlocks && Array.isArray(b.content.columnBlocks)) {
+				b.content.columnBlocks.forEach(col => normalizeBlocksForPublic(col));
+			}
+		});
+	};
+
+	const renderBlocksPublic = (blocks) => {
+		const area = document.getElementById("note-content-area");
+		if (!area) return;
+		area.innerHTML = "";
+		normalizeBlocksForPublic(blocks);
+		renderBlocksIntoContainer(area, blocks);
 		updateIcons();
 	};
 
@@ -461,5 +514,26 @@ document.addEventListener("DOMContentLoaded", () => {
 		setSelectedNote(null);
 	}
 	
+	// Triple-click logo to open admin login
+	let _logoClickCount = 0;
+	let _logoTimer = null;
+	window.handleLogoClick = () => {
+		_logoClickCount++;
+		if (_logoClickCount >= 3) {
+			_logoClickCount = 0;
+			if (_logoTimer) clearTimeout(_logoTimer);
+			const modal = document.getElementById('admin-login-modal');
+			if (modal) {
+				modal.classList.remove('hidden');
+				modal.setAttribute('aria-hidden', 'false');
+				document.body.classList.add('overflow-hidden');
+				updateIcons();
+			}
+			return;
+		}
+		if (_logoTimer) clearTimeout(_logoTimer);
+		_logoTimer = setTimeout(() => { _logoClickCount = 0; }, 800);
+	};
+
 	updateIcons();
 });

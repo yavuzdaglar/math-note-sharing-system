@@ -7,9 +7,9 @@
     var courses = ViewBag.Courses as List<CourseDto> ?? new();
 }
 
-<button type="button" onclick="history.back()" class="fixed top-4 left-4 z-[9999] flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-700 shadow-md backdrop-blur hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200">
+<button type="button" onclick="window.location.href='/'" class="fixed top-4 left-4 z-[9999] flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-700 shadow-md backdrop-blur hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200">
     <i data-lucide="arrow-left" class="w-4 h-4"></i>
-    <span>Geri</span>
+    <span>Ana Sayfa</span>
 </button>
 
 <div class="min-h-screen bg-[#f1f5f9] dark:bg-[#0d161e] dark:text-slate-100 pb-20">
@@ -57,6 +57,10 @@
             <button onclick="switchTab('categories')" id="tab-categories"
                 class="tab-btn flex-1 py-4 px-6 rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all text-slate-500 hover:bg-slate-50">
                 <i data-lucide="layers" class="w-4 h-4"></i> Kategoriler
+            </button>
+            <button onclick="switchTab('admins')" id="tab-admins"
+                class="tab-btn flex-1 py-4 px-6 rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all text-slate-500 hover:bg-slate-50">
+                <i data-lucide="shield" class="w-4 h-4"></i> Adminler
             </button>
         </div>
 
@@ -146,6 +150,32 @@
                 </button>
             </div>
         </div>
+
+        <div id="content-admins" class="tab-content hidden animate-in fade-in duration-500">
+            <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                <div class="p-8 border-b border-slate-50 flex justify-between items-center">
+                    <h2 class="text-xl font-black text-slate-800">Yönetici Hesapları</h2>
+                    <button onclick="openAdminModal()"
+                        class="px-5 py-2.5 bg-brand-teal text-white font-bold text-sm rounded-xl hover:bg-brand-teal-light transition-all flex items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Yeni Admin
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-slate-50/50">
+                            <tr>
+                                <th class="px-8 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">Kullanıcı Adı</th>
+                                <th class="px-8 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">Oluşturulma</th>
+                                <th class="px-8 py-4 text-right text-xs font-black text-slate-400 uppercase tracking-wider">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminsTableBody" class="divide-y divide-slate-50">
+                            <!-- JS ile dolacak -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -161,6 +191,22 @@
         <button onclick="saveCategory()"
             class="w-full py-5 bg-brand-teal text-white font-black rounded-2xl shadow-xl shadow-teal-100 hover:bg-brand-teal-light transition-all">Kategoriyi
             Kaydet</button>
+    </div>
+</div>
+
+<div id="adminModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeAdminModal()"></div>
+    <div class="bg-white dark:bg-[#0f172a] dark:text-slate-100 relative z-10 w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
+        <h3 class="text-2xl font-black text-slate-900 dark:text-slate-100 mb-2">Admin Oluştur</h3>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mb-8 font-medium">Sisteme yeni bir yönetici tanımlayın.</p>
+        <input type="text" id="adminUsername"
+            class="w-full p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-2xl mb-4 outline-none focus:ring-4 focus:ring-brand-teal/10"
+            placeholder="Kullanıcı Adı" />
+        <input type="password" id="adminPassword"
+            class="w-full p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-2xl mb-8 outline-none focus:ring-4 focus:ring-brand-teal/10"
+            placeholder="Şifre" />
+        <button onclick="saveAdmin()"
+            class="w-full py-5 bg-brand-teal text-white font-black rounded-2xl shadow-xl shadow-teal-100 hover:bg-brand-teal-light transition-all">Admini Kaydet</button>
     </div>
 </div>
 
@@ -199,5 +245,5 @@
 </style>
 
 @section Scripts {
-    <script src="~/js/admin.js"></script>
+    <script src="~/js/admin.js?v=2"></script>
 }
