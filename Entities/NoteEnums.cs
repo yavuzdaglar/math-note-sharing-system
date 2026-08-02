@@ -18,5 +18,7 @@ public enum NoteBlockType
     Quote = 7,
     List = 8,
     Subheading = 9,
-    Grid = 10
+    Grid = 10,
+    Math = 11,
+    Gif = 12
 }

@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Vurmaz Online</title>
+    <link rel="icon" type="image/png" href="~/logo.png" />
     <script>
         (function () {
             try {
@@ -16,6 +17,8 @@
         })();
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+    <link rel="stylesheet" href="~/css/block-editor.css?v=15" />
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -42,7 +45,10 @@
     @RenderBody()
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="~/js/main.js?v=4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+    <script src="~/js/main.js?v=13"></script>
+    <script type="module" src="~/js/gif-player.js?v=3"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

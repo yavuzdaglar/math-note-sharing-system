@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Projects\\MehmetEminProje\\Application\\Application.csproj": {}
+    "C:\\Projects\\MathNoteHub\\Application\\Application.csproj": {}
   },
   "projects": {
-    "C:\\Projects\\MehmetEminProje\\Application\\Application.csproj": {
+    "C:\\Projects\\MathNoteHub\\Application\\Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Projects\\MehmetEminProje\\Application\\Application.csproj",
+        "projectUniqueName": "C:\\Projects\\MathNoteHub\\Application\\Application.csproj",
         "projectName": "Application",
-        "projectPath": "C:\\Projects\\MehmetEminProje\\Application\\Application.csproj",
+        "projectPath": "C:\\Projects\\MathNoteHub\\Application\\Application.csproj",
         "packagesPath": "C:\\Users\\YAVUZDAGLAR\\.nuget\\packages\\",
-        "outputPath": "C:\\Projects\\MehmetEminProje\\Application\\obj\\",
+        "outputPath": "C:\\Projects\\MathNoteHub\\Application\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -32,11 +32,11 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Projects\\MehmetEminProje\\Domain\\Domain.csproj": {
-                "projectPath": "C:\\Projects\\MehmetEminProje\\Domain\\Domain.csproj"
+              "C:\\Projects\\MathNoteHub\\Domain\\Domain.csproj": {
+                "projectPath": "C:\\Projects\\MathNoteHub\\Domain\\Domain.csproj"
               },
-              "C:\\Projects\\MehmetEminProje\\Entities\\Entities.csproj": {
-                "projectPath": "C:\\Projects\\MehmetEminProje\\Entities\\Entities.csproj"
+              "C:\\Projects\\MathNoteHub\\Entities\\Entities.csproj": {
+                "projectPath": "C:\\Projects\\MathNoteHub\\Entities\\Entities.csproj"
               }
             }
           }
@@ -350,14 +350,14 @@
         }
       }
     },
-    "C:\\Projects\\MehmetEminProje\\Domain\\Domain.csproj": {
+    "C:\\Projects\\MathNoteHub\\Domain\\Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Projects\\MehmetEminProje\\Domain\\Domain.csproj",
+        "projectUniqueName": "C:\\Projects\\MathNoteHub\\Domain\\Domain.csproj",
         "projectName": "Domain",
-        "projectPath": "C:\\Projects\\MehmetEminProje\\Domain\\Domain.csproj",
+        "projectPath": "C:\\Projects\\MathNoteHub\\Domain\\Domain.csproj",
         "packagesPath": "C:\\Users\\YAVUZDAGLAR\\.nuget\\packages\\",
-        "outputPath": "C:\\Projects\\MehmetEminProje\\Domain\\obj\\",
+        "outputPath": "C:\\Projects\\MathNoteHub\\Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -378,8 +378,8 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Projects\\MehmetEminProje\\Entities\\Entities.csproj": {
-                "projectPath": "C:\\Projects\\MehmetEminProje\\Entities\\Entities.csproj"
+              "C:\\Projects\\MathNoteHub\\Entities\\Entities.csproj": {
+                "projectPath": "C:\\Projects\\MathNoteHub\\Entities\\Entities.csproj"
               }
             }
           }
@@ -693,14 +693,14 @@
         }
       }
     },
-    "C:\\Projects\\MehmetEminProje\\Entities\\Entities.csproj": {
+    "C:\\Projects\\MathNoteHub\\Entities\\Entities.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Projects\\MehmetEminProje\\Entities\\Entities.csproj",
+        "projectUniqueName": "C:\\Projects\\MathNoteHub\\Entities\\Entities.csproj",
         "projectName": "Entities",
-        "projectPath": "C:\\Projects\\MehmetEminProje\\Entities\\Entities.csproj",
+        "projectPath": "C:\\Projects\\MathNoteHub\\Entities\\Entities.csproj",
         "packagesPath": "C:\\Users\\YAVUZDAGLAR\\.nuget\\packages\\",
-        "outputPath": "C:\\Projects\\MehmetEminProje\\Entities\\obj\\",
+        "outputPath": "C:\\Projects\\MathNoteHub\\Entities\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

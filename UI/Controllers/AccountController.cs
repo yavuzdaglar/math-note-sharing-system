@@ -33,12 +33,6 @@ public class AccountController : Controller
 
         return Json(new { success = false, message = result?.Message ?? "Giriş başarısız!" });
     }
-
-    public IActionResult Logout()
-    {
-        HttpContext.Session.Clear();
-        return RedirectToAction("Index", "Home");
-    }
 }
 
 public class ApiLoginResponse

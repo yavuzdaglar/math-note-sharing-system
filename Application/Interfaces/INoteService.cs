@@ -19,7 +19,6 @@ public interface INoteService
     Task<ServiceResult<NoteDetailDto>> UpdateNoteAsync(int id, NoteUpdateDto dto, CancellationToken cancellationToken);
     Task<ServiceResult<bool>> DeleteNoteAsync(int id, CancellationToken cancellationToken);
 
-    Task<ServiceResult<List<BlockDto>>> AddBlocksAsync(int noteId, List<BlockUpsertDto> blocks, CancellationToken cancellationToken);
     Task<ServiceResult<List<BlockDto>>> UpsertBlocksAsync(int noteId, List<BlockUpsertDto> blocks, CancellationToken cancellationToken);
     Task<ServiceResult<BlockDto>> UpdateBlockAsync(int noteId, int blockId, BlockUpsertDto block, CancellationToken cancellationToken);
     Task<ServiceResult<bool>> DeleteBlockAsync(int noteId, int blockId, CancellationToken cancellationToken);

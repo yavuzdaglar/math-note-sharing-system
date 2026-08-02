@@ -24,6 +24,14 @@ document.addEventListener("DOMContentLoaded", () => {
 	let selectedNote = null;
 	let loadingTimer = null;
 
+	const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7078';
+	const normalizeMediaUrl = (url) => {
+		if (!url) return '';
+		if (/^https?:\/\//i.test(url)) return url;
+		if (url.startsWith('/')) return `${API_BASE_URL}${url}`;
+		return url;
+	};
+
 	const updateIcons = () => {
 		if (window.lucide) {
 			window.lucide.createIcons();
@@ -185,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		setLoading(true);
 		setHomeButtonState(false);
 		try {
-			const response = await fetch(`https://localhost:7078/api/notes/${noteId}`);
+			const response = await fetch(`${API_BASE_URL}/api/notes/${noteId}`);
 			if (response.ok) {
 				const note = await response.json();
 				updateNoteText(note.title);
@@ -212,7 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		setHomeButtonState(false);
 
 		try {
-			const response = await fetch(`https://localhost:7078/api/notes/course/${normalizedCourseId}`);
+			const response = await fetch(`${API_BASE_URL}/api/notes/course/${normalizedCourseId}`);
 			if (response.ok) {
 				const note = await response.json();
 				updateNoteText(note.title);
@@ -255,8 +263,10 @@ document.addEventListener("DOMContentLoaded", () => {
 					code: 6,
 					quote: 7,
 					list: 8,
-					grid: 10
-				};
+				grid: 10,
+				math: 11,
+				gif: 12
+			};
 				return map[normalized] ?? 0;
 			}
 			return 0;
@@ -291,12 +301,12 @@ document.addEventListener("DOMContentLoaded", () => {
 				case 1: { // Heading
 					const level = block.content.level || 2;
 					const textColor = { black: _isDark ? '#e2e8f0' : '#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || (_isDark ? '#e2e8f0' : '#162d42');
-					el.innerHTML = `<h${level} class="text-4xl font-black mt-12 mb-6 tracking-tight uppercase border-l-4 border-brand-teal pl-6" style="color:${textColor}">${block.content.text || ''}</h${level}>`;
+					el.innerHTML = `<h${level} class="text-4xl font-black mt-12 mb-6 tracking-tight uppercase border-l-4 border-brand-teal pl-6" style="color:${textColor}">${block.content.html || block.content.text || ''}</h${level}>`;
 					break;
 				}
 				case 9: { // Subheading
 					const shColor = { black: _isDark ? '#e2e8f0' : '#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || (_isDark ? '#e2e8f0' : '#162d42');
-					el.innerHTML = `<h3 class="text-2xl font-bold mt-6 mb-3 tracking-tight" style="color:${shColor}"><span class="subheading-dash">- </span>${block.content.text || ''}</h3>`;
+					el.innerHTML = `<h3 class="text-2xl font-bold mt-6 mb-3 tracking-tight" style="color:${shColor}"><span class="subheading-dash">- </span>${block.content.html || block.content.text || ''}</h3>`;
 					break;
 				}
 				case 2: // ImportantNote
@@ -306,23 +316,22 @@ document.addEventListener("DOMContentLoaded", () => {
 								<i data-lucide="info" class="w-6 h-6"></i>
 								<h4 class="font-black text-xl italic underline underline-offset-8">Önemli Bilgi</h4>
 							</div>
-							<p class="text-lg leading-relaxed font-bold">${block.content.text}</p>
+							<p class="text-lg leading-relaxed font-bold">${block.content.html || block.content.text || ''}</p>
 						</div>`;
 					break;
 				case 3: { // Video
-					const url = block.content.url || "";
+					const url = normalizeMediaUrl(block.content.url || "");
+					const mediaScale = Math.max(28, Math.min(100, Number(block.content?.mediaScale ?? 100)));
 					const vId = getYoutubeId(url);
 					const caption = block.content.caption || "";
 					if (vId) {
 						el.innerHTML = `
-							<div class="aspect-video w-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5 bg-black">
-								<iframe class="w-full h-full" src="https://www.youtube.com/embed/${vId}" frameborder="0" allowfullscreen></iframe>
-							</div>
+							<div class="media-preview-frame" style="width:${mediaScale}%;margin:0 auto;"><iframe class="media-video-frame" src="https://www.youtube.com/embed/${vId}" frameborder="0" allowfullscreen></iframe></div>
 							<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${caption || "Video İçeriği"}</p>`;
 					} else {
 						el.innerHTML = `
-							<div class="rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5 bg-black">
-								<video class="w-full h-auto" controls>
+							<div class="media-preview-frame" style="width:${mediaScale}%;margin:0 auto;">
+								<video class="media-asset" controls>
 									<source src="${url}" />
 								</video>
 							</div>
@@ -333,14 +342,14 @@ document.addEventListener("DOMContentLoaded", () => {
 				case 4: // Image
 					el.innerHTML = `
 						<div class="group relative rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5">
-							<img src="${block.content.url}" class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105" alt="Görsel" />
+							<div class="media-preview-frame" style="width:${Math.max(28, Math.min(100, Number(block.content?.mediaScale ?? 100)))}%;margin:0 auto;"><img src="${normalizeMediaUrl(block.content.url)}" class="media-asset transition-transform duration-700 group-hover:scale-105" alt="Görsel" /></div>
 							${block.content.caption ? `<div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent text-white font-bold text-sm">${block.content.caption}</div>` : ""}
 						</div>`;
 					break;
 				case 5: { // DoubleImage
 					const urls = block.content?.urls || [];
 					const dCap = block.content?.caption || '';
-					const imgs = urls.map(u => `<div class="rounded-2xl overflow-hidden shadow-md"><img src="${u || ''}" class="w-full h-40 object-cover" onerror="this.src='https://via.placeholder.com/400x200?text=Gecersiz+URL'" /></div>`).join('');
+					const imgs = urls.map(u => `<div class="rounded-2xl overflow-hidden shadow-md"><div class="media-preview-frame"><img src="${normalizeMediaUrl(u || '')}" class="media-asset" onerror="this.src='https://via.placeholder.com/400x200?text=Gecersiz+URL'" /></div></div>`).join('');
 					el.innerHTML = `<div class="grid grid-cols-2 gap-4">${imgs}</div>${dCap ? `<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${dCap}</p>` : ''}`;
 					break;
 				}
@@ -360,20 +369,62 @@ document.addEventListener("DOMContentLoaded", () => {
 				case 10: { // Grid
 					const cols = block.content.columns || [1, 1];
 					const colBlocks = block.content.columnBlocks || [];
-					const isMatrix = block.content.layout === 'matrix2x2' || (cols.length === 4 && colBlocks.length === 4);
+					const layout = block.content.layout || '';
+					const isMatrix = layout === 'matrix2x2';
+					const isWideBottom = layout === 'top-two-bottom-wide';
 					const total = cols.reduce((a, b) => a + b, 0);
 					const gridWrapper = document.createElement('div');
 					gridWrapper.className = 'grid gap-6 rounded-[2rem] border border-slate-200 dark:border-slate-700 p-6 bg-slate-50/50 dark:bg-slate-800/50 shadow-inner';
-					gridWrapper.style.gridTemplateColumns = isMatrix ? '1fr 1fr' : cols.map(v => `${(v / total) * 100}%`).join(' ');
-					colBlocks.forEach(subBlocks => {
+					gridWrapper.style.gridTemplateColumns = (isMatrix || isWideBottom) ? '1fr 1fr' : cols.map(v => `${(v / total) * 100}%`).join(' ');
+					colBlocks.forEach((subBlocks, idx) => {
 						const col = document.createElement('div');
 						col.className = 'grid-col space-y-4';
+						if (isWideBottom && idx === 2) {
+							col.style.gridColumn = '1 / -1';
+						}
 						renderBlocksIntoContainer(col, subBlocks);
 						gridWrapper.appendChild(col);
 					});
 					el.appendChild(gridWrapper);
 					break;
 				}
+			case 11: { // Math
+				const latex = block.content.latex || '';
+				const display = block.content.display !== false;
+				const mathWrapper = document.createElement('div');
+				mathWrapper.className = 'math-rendered-block';
+				if (latex.trim() && typeof katex !== 'undefined') {
+					try {
+						katex.render(latex, mathWrapper, { displayMode: display, throwOnError: false });
+					} catch {
+						mathWrapper.textContent = latex;
+					}
+				} else {
+					mathWrapper.textContent = latex || 'LaTeX ifadesi girilmedi.';
+					mathWrapper.className = 'text-slate-400 italic';
+				}
+				el.appendChild(mathWrapper);
+				break;
+			}
+			case 12: { // Gif
+				const gUrl = normalizeMediaUrl(block.content.url || "");
+				const gScale = Math.max(28, Math.min(100, Number(block.content?.mediaScale ?? 100)));
+				const gSpeed = Number(block.content?.speed ?? 1);
+				const gCap = block.content.caption || "";
+				el.innerHTML = `
+					<div class="gif-block">
+						<div class="media-preview-frame" style="width:${gScale}%;margin:0 auto;">
+							<canvas class="gif-canvas-public" data-gif-url="${gUrl}" data-gif-speed="${gSpeed}" style="width:100%;height:auto;border-radius:0.75rem;background:transparent;display:block;"></canvas>
+						</div>
+						<div class="gif-speed-control" style="width:${gScale}%;margin:0 auto;">
+							<span>Hız</span>
+							<input type="range" min="0.25" max="4" step="0.25" value="${gSpeed}" class="media-size-slider" />
+							<strong>${Number(gSpeed).toFixed(1)}x</strong>
+						</div>
+						${gCap ? `<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${gCap}</p>` : ""}
+					</div>`;
+				break;
+			}
 			}
 			container.appendChild(el);
 		});
@@ -383,11 +434,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (!blockArray) return;
 		blockArray.forEach(b => {
 			if (typeof b.type === 'number' || (typeof b.type === 'string' && /^\d+$/.test(b.type))) {
-				const numMap = { 0:'Paragraph',1:'Heading',2:'ImportantNote',3:'Video',4:'Image',5:'DoubleImage',6:'Code',7:'Quote',8:'List',9:'Subheading',10:'Grid' };
+				const numMap = { 0:'Paragraph',1:'Heading',2:'ImportantNote',3:'Video',4:'Image',5:'DoubleImage',6:'Code',7:'Quote',8:'List',9:'Subheading',10:'Grid',11:'Math',12:'Gif' };
 				const n = typeof b.type === 'number' ? b.type : parseInt(b.type, 10);
 				b.type = numMap[n] || 'Paragraph';
 			} else if (typeof b.type === 'string') {
-				const strMap = { paragraph:'Paragraph',heading:'Heading',subheading:'Subheading',importantnote:'ImportantNote',video:'Video',image:'Image',doubleimage:'DoubleImage',code:'Code',quote:'Quote',list:'List',grid:'Grid' };
+				const strMap = { paragraph:'Paragraph',heading:'Heading',subheading:'Subheading',importantnote:'ImportantNote',video:'Video',image:'Image',doubleimage:'DoubleImage',code:'Code',quote:'Quote',list:'List',grid:'Grid',math:'Math',gif:'Gif' };
 				b.type = strMap[b.type.trim().toLowerCase()] || 'Paragraph';
 			} else {
 				b.type = 'Paragraph';
@@ -398,13 +449,70 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	};
 
+	const renderMathInContainerPublic = (container) => {
+		if (!container || typeof katex === 'undefined') return;
+		if (!container.textContent || !container.textContent.includes('$')) return;
+
+		const tempRoot = document.createElement(container.tagName || 'div');
+		tempRoot.innerHTML = container.innerHTML;
+		const walker = document.createTreeWalker(tempRoot, NodeFilter.SHOW_TEXT, null, false);
+		const textNodes = [];
+		while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+		textNodes.forEach(node => {
+			if (!node.textContent.includes('$')) return;
+			const text = node.textContent;
+			const regex = /\$\$([\s\S]*?)\$\$|\$([^\n$]+?)\$/g;
+			const parts = [];
+			let lastIndex = 0;
+			let match;
+			while ((match = regex.exec(text)) !== null) {
+				if (match.index > lastIndex) parts.push(document.createTextNode(text.slice(lastIndex, match.index)));
+				const latex = match[1] ?? match[2];
+				const display = Boolean(match[1]);
+				const span = document.createElement('span');
+				span.className = display ? 'math-inline math-display' : 'math-inline';
+				try { span.innerHTML = katex.renderToString(latex, { displayMode: display, throwOnError: false }); }
+				catch { span.textContent = match[0]; }
+				parts.push(span);
+				lastIndex = match.index + match[0].length;
+			}
+			if (parts.length > 0) {
+				if (lastIndex < text.length) parts.push(document.createTextNode(text.slice(lastIndex)));
+				const fragment = document.createDocumentFragment();
+				parts.forEach(part => fragment.appendChild(part));
+				node.parentNode.replaceChild(fragment, node);
+			}
+		});
+
+		container.innerHTML = tempRoot.innerHTML;
+	};
+
 	const renderBlocksPublic = (blocks) => {
 		const area = document.getElementById("note-content-area");
 		if (!area) return;
 		area.innerHTML = "";
 		normalizeBlocksForPublic(blocks);
 		renderBlocksIntoContainer(area, blocks);
+		renderMathInContainerPublic(area);
 		updateIcons();
+		if (window.GifPlayer) {
+			window.GifPlayer.stopAll();
+			area.querySelectorAll('.gif-canvas-public').forEach((canvas) => {
+				window.GifPlayer.play(canvas, canvas.dataset.gifUrl || '', Number(canvas.dataset.gifSpeed || 1));
+			});
+			area.querySelectorAll('.gif-speed-control').forEach((control) => {
+				const slider = control.querySelector('input[type="range"]');
+				const valueEl = control.querySelector('strong');
+				const canvas = control.closest('.gif-block')?.querySelector('.gif-canvas-public');
+				if (!slider) return;
+				slider.addEventListener('input', () => {
+					const v = parseFloat(slider.value);
+					if (valueEl) valueEl.textContent = `${v.toFixed(1)}x`;
+					if (canvas) window.GifPlayer.setSpeed(canvas, v);
+				});
+			});
+		}
 	};
 
 	const toggleCategory = (button) => {

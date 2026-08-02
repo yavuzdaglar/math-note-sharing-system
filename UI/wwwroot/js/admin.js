@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!confirmed) return;
 
         try {
-            const response = await fetch(`https://localhost:7078/api/admin/notes/${id}`, {
+            const response = await fetch(`${apiBase}/admin/notes/${id}`, {
                 method: 'DELETE'
             });
 

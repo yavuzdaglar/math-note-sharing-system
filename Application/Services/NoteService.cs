@@ -191,45 +191,6 @@ public class NoteService : INoteService
         return ServiceResult<bool>.Success(true);
     }
 
-    public async Task<ServiceResult<List<BlockDto>>> AddBlocksAsync(int noteId, List<BlockUpsertDto> blocks, CancellationToken cancellationToken)
-    {
-        if (blocks.Count == 0)
-        {
-            return ServiceResult<List<BlockDto>>.Fail("En az bir blok gerekli.", 400);
-        }
-
-        var note = await _repository.GetByIdAsync(noteId, true, cancellationToken);
-        if (note == null)
-        {
-            return ServiceResult<List<BlockDto>>.Fail("Not bulunamadi.", 404);
-        }
-
-        var validation = ValidateBlocks(blocks);
-        if (!validation.Succeeded)
-        {
-            return ServiceResult<List<BlockDto>>.Fail(validation.Error ?? "Blok dogrulama hatasi.", validation.StatusCode);
-        }
-
-        var now = DateTime.UtcNow;
-        var newBlocks = BuildBlocks(blocks, now);
-        foreach (var block in newBlocks)
-        {
-            note.Blocks.Add(block);
-        }
-
-        note.UpdatedAtUtc = now;
-        NormalizeOrder(note);
-
-        await _repository.SaveChangesAsync(cancellationToken);
-
-        var dto = note.Blocks
-            .OrderBy(b => b.Order)
-            .Select(MapBlock)
-            .ToList();
-
-        return ServiceResult<List<BlockDto>>.Success(dto);
-    }
-
     public async Task<ServiceResult<List<BlockDto>>> UpsertBlocksAsync(int noteId, List<BlockUpsertDto> blocks, CancellationToken cancellationToken)
     {
         var note = await _repository.GetByIdAsync(noteId, true, cancellationToken);
@@ -277,9 +238,7 @@ public class NoteService : INoteService
         }
 
         note.UpdatedAtUtc = now;
-        NormalizeOrder(note);
-
-        await _repository.SaveChangesAsync(cancellationToken);
+        await SaveBlockOrderAsync(note, now, cancellationToken);
 
         var resultDto = note.Blocks.OrderBy(b => b.Order).Select(MapBlock).ToList();
         return ServiceResult<List<BlockDto>>.Success(resultDto, 200);
@@ -312,11 +271,9 @@ public class NoteService : INoteService
             target.Order = block.Order.Value;
         }
 
-        target.UpdatedAtUtc = DateTime.UtcNow;
-        note.UpdatedAtUtc = target.UpdatedAtUtc;
-        NormalizeOrder(note);
-
-        await _repository.SaveChangesAsync(cancellationToken);
+        var now = DateTime.UtcNow;
+        target.UpdatedAtUtc = now;
+        await SaveBlockOrderAsync(note, now, cancellationToken);
         return ServiceResult<BlockDto>.Success(MapBlock(target));
     }
 
@@ -335,10 +292,7 @@ public class NoteService : INoteService
         }
 
         note.Blocks.Remove(target);
-        note.UpdatedAtUtc = DateTime.UtcNow;
-        NormalizeOrder(note);
-
-        await _repository.SaveChangesAsync(cancellationToken);
+        await SaveBlockOrderAsync(note, DateTime.UtcNow, cancellationToken);
         return ServiceResult<bool>.Success(true);
     }
 
@@ -371,11 +325,9 @@ public class NoteService : INoteService
                 return ServiceResult<bool>.Fail("Gecersiz blok listesi.", 400);
             }
             block.Order = order;
-            block.UpdatedAtUtc = DateTime.UtcNow;
         }
 
-        note.UpdatedAtUtc = DateTime.UtcNow;
-        await _repository.SaveChangesAsync(cancellationToken);
+        await SaveBlockOrderAsync(note, DateTime.UtcNow, cancellationToken);
         return ServiceResult<bool>.Success(true);
     }
 
@@ -496,6 +448,35 @@ public class NoteService : INoteService
         }
     }
 
+    // (NoteId, Order) benzersiz indeksi yüzünden ayni parti icinde Order degisimleri
+    // EF Core'da döngüsel bagimlilik hatasina yol acabilir. Bunu onlemek icin siralar
+    // iki fazda guncellenir: once hepsi benzersiz gecici degerlere tasinir, kaydedilir;
+    // sonra gercek siralamaya gecilir ve tekrar kaydedilir.
+    private async Task SaveBlockOrderAsync(Note note, DateTime now, CancellationToken cancellationToken)
+    {
+        const int tempOffset = 1_000_000;
+
+        var ordered = note.Blocks
+            .OrderBy(b => b.Order)
+            .ThenBy(b => b.CreatedAtUtc)
+            .ToList();
+
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            ordered[i].Order = i + 1 + tempOffset;
+        }
+
+        note.UpdatedAtUtc = now;
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            ordered[i].Order = i + 1;
+        }
+
+        await _repository.SaveChangesAsync(cancellationToken);
+    }
+
     private static ServiceResult<bool> ValidateBlocks(List<BlockUpsertDto> blocks)
     {
         foreach (var block in blocks)
@@ -568,6 +549,14 @@ public class NoteService : INoteService
                 {
                     return "Alt baslik icin 'text' zorunlu.";
                 }
+                return null;
+            case NoteBlockType.Math:
+                if (!TryGetString(block.Content, "latex", out _))
+                {
+                    return "Math bloklari icin 'latex' zorunlu.";
+                }
+                return null;
+            case NoteBlockType.Gif:
                 return null;
             case NoteBlockType.Grid:
                 if (!block.Content.TryGetProperty("columns", out var colsEl) || colsEl.ValueKind != JsonValueKind.Array || colsEl.GetArrayLength() < 2)
@@ -670,11 +659,5 @@ public class NoteService : INoteService
         }
 
         return items.Any(i => i.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(i.GetString()));
-    }
-
-    private static bool IsValidUrl(string url)
-    {
-        return Uri.TryCreate(url, UriKind.Absolute, out var parsed) &&
-               (parsed.Scheme == Uri.UriSchemeHttp || parsed.Scheme == Uri.UriSchemeHttps);
     }
 }

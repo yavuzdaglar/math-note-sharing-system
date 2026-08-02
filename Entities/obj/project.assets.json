@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Projects\\MehmetEminProje\\Entities\\Entities.csproj",
+      "projectUniqueName": "C:\\Projects\\MathNoteHub\\Entities\\Entities.csproj",
       "projectName": "Entities",
-      "projectPath": "C:\\Projects\\MehmetEminProje\\Entities\\Entities.csproj",
+      "projectPath": "C:\\Projects\\MathNoteHub\\Entities\\Entities.csproj",
       "packagesPath": "C:\\Users\\YAVUZDAGLAR\\.nuget\\packages\\",
-      "outputPath": "C:\\Projects\\MehmetEminProje\\Entities\\obj\\",
+      "outputPath": "C:\\Projects\\MathNoteHub\\Entities\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

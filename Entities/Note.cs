@@ -10,10 +10,7 @@ public class Note
     public DateTime CreatedAtUtc { get; set; }
     public DateTime UpdatedAtUtc { get; set; }
     public DateTime? PublishedAtUtc { get; set; }
-    public int? ParentId { get; set; }
-    public Note? Parent { get; set; }
-    public ICollection<Note> ChildNotes { get; set; } = new List<Note>();
-    
+
     public int? CourseId { get; set; }
     public Course? Course { get; set; }
     
