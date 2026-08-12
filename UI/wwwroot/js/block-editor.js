@@ -10,6 +10,35 @@ function normalizeMediaUrl(url) {
     return url;
 }
 
+const mediaServerSaveTimers = {};
+
+async function saveMediaToServer(url) {
+    const trimmed = (url || '').trim();
+    if (!/^https?:\/\//i.test(trimmed)) return null;
+    if (/youtube\.com|youtu\.be|youtube-nocookie\.com/i.test(trimmed)) return null;
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/media/from-url`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: trimmed })
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.url || null;
+    } catch (e) {
+        console.error('Media server save error:', e);
+        return null;
+    }
+}
+
+function scheduleMediaServerSave(key, url, onDone) {
+    clearTimeout(mediaServerSaveTimers[key]);
+    mediaServerSaveTimers[key] = setTimeout(async () => {
+        const localUrl = await saveMediaToServer(url);
+        if (localUrl && typeof onDone === 'function') onDone(localUrl);
+    }, 1200);
+}
+
 function showConfirm(message, confirmText = 'Uygula', cancelText = 'İptal') {
     return new Promise(resolve => {
         const isDark = document.documentElement.classList.contains('dark');
@@ -615,6 +644,15 @@ function renderMediaPreview(tempId, mediaType) {
 function onMediaUrlInput(tempId, mediaType, value) {
     updateBlockContent(tempId, 'url', value);
     renderMediaPreview(tempId, mediaType);
+    scheduleMediaServerSave(tempId, value, (localUrl) => {
+        const block = findBlockByTempId(tempId);
+        if (!block || block.content.url !== value) return;
+        block.content.url = localUrl;
+        const urlInput = document.getElementById(`media-url-${tempId}`);
+        if (urlInput) urlInput.value = localUrl;
+        renderMediaPreview(tempId, mediaType);
+        if (window.showToast) window.showToast('Medya sunucuya kaydedildi.', 'success');
+    });
 }
 
 async function onMediaFileSelect(tempId, mediaType, file, urlInputId) {
@@ -727,6 +765,14 @@ function onGifUrlInput(tempId, value) {
         if (window.lucide) window.lucide.createIcons();
     }
     renderGifPreview(tempId);
+    scheduleMediaServerSave(tempId, value, (localUrl) => {
+        const b = findBlockByTempId(tempId);
+        if (!b || b.content.url !== value) return;
+        const urlInput = document.getElementById(`gif-url-${tempId}`);
+        if (urlInput) urlInput.value = localUrl;
+        onGifUrlInput(tempId, localUrl);
+        if (window.showToast) window.showToast('GIF sunucuya kaydedildi.', 'success');
+    });
 }
 
 async function onGifFileSelect(tempId, file, urlInputId) {
@@ -762,7 +808,7 @@ function buildDoubleImageEditor(block) {
                 ${[0, 1].map(i => `
                     <div>
                         <label class="text-xs font-bold text-slate-400 mb-1 block">Resim ${i + 1}</label>
-                        <input type="text" value="${escapeForAttr(urls[i] || '')}" placeholder="Resim URL'si ${i + 1}" class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-teal/40 transition" oninput="updateDoubleImageUrl('${block.tempId}', ${i}, this.value)" />
+                        <input type="text" id="media-url-${block.tempId}-${i}" value="${escapeForAttr(urls[i] || '')}" placeholder="Resim URL'si ${i + 1}" class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-teal/40 transition" oninput="updateDoubleImageUrl('${block.tempId}', ${i}, this.value)" />
                         <div class="mt-1">${preview(urls[i], i)}</div>
                     </div>
                 `).join('')}
@@ -777,6 +823,15 @@ function updateDoubleImageUrl(tempId, idx, value) {
     if (!block) return;
     if (!Array.isArray(block.content.urls)) block.content.urls = ['', ''];
     block.content.urls[idx] = value;
+    scheduleMediaServerSave(`${tempId}:${idx}`, value, (localUrl) => {
+        const b = findBlockByTempId(tempId);
+        if (!b || !Array.isArray(b.content.urls)) return;
+        if (b.content.urls[idx] !== value) return;
+        b.content.urls[idx] = localUrl;
+        const urlInput = document.getElementById(`media-url-${tempId}-${idx}`);
+        if (urlInput) urlInput.value = localUrl;
+        if (window.showToast) window.showToast('Medya sunucuya kaydedildi.', 'success');
+    });
 }
 
 // --- Grid Editor ---
