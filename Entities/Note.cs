@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Entities;
 
 public class Note
@@ -13,6 +15,9 @@ public class Note
 
     public int? CourseId { get; set; }
     public Course? Course { get; set; }
-    
+
+    [Timestamp]
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
     public ICollection<NoteBlock> Blocks { get; set; } = new List<NoteBlock>();
 }

@@ -2,6 +2,20 @@ let blocks = [];
 let isSaving = false;
 let lastFocusedListItem = null;
 const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7078';
+const API_TOKEN = window.API_TOKEN || '';
+
+function apiFetch(url, options = {}) {
+    const headers = new Headers(options.headers || {});
+    if (API_TOKEN) headers.set('Authorization', `Bearer ${API_TOKEN}`);
+    return fetch(url, { ...options, headers });
+}
+
+function apiFetchJson(url, options = {}) {
+    const headers = new Headers((options || {}).headers || {});
+    headers.set('Content-Type', 'application/json');
+    if (API_TOKEN) headers.set('Authorization', `Bearer ${API_TOKEN}`);
+    return fetch(url, { ...(options || {}), headers });
+}
 
 function normalizeMediaUrl(url) {
     if (!url) return '';
@@ -17,9 +31,8 @@ async function saveMediaToServer(url) {
     if (!/^https?:\/\//i.test(trimmed)) return null;
     if (/youtube\.com|youtu\.be|youtube-nocookie\.com/i.test(trimmed)) return null;
     try {
-        const res = await fetch(`${API_BASE_URL}/api/media/from-url`, {
+        const res = await apiFetchJson(`${API_BASE_URL}/api/media/from-url`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: trimmed })
         });
         if (!res.ok) return null;
@@ -660,7 +673,7 @@ async function onMediaFileSelect(tempId, mediaType, file, urlInputId) {
     const formData = new FormData();
     formData.append('file', file);
     try {
-        const res = await fetch(`${API_BASE_URL}/api/media/upload`, { method: 'POST', body: formData });
+        const res = await apiFetch(`${API_BASE_URL}/api/media/upload`, { method: 'POST', body: formData });
         if (!res.ok) throw new Error('Upload failed: ' + res.status);
         const data = await res.json();
         const storedUrl = data.url || '';
@@ -780,7 +793,7 @@ async function onGifFileSelect(tempId, file, urlInputId) {
     const formData = new FormData();
     formData.append('file', file);
     try {
-        const res = await fetch(`${API_BASE_URL}/api/media/upload`, { method: 'POST', body: formData });
+        const res = await apiFetch(`${API_BASE_URL}/api/media/upload`, { method: 'POST', body: formData });
         if (!res.ok) throw new Error('Upload failed: ' + res.status);
         const data = await res.json();
         const storedUrl = data.url || '';
@@ -937,6 +950,27 @@ function syncEditorsBeforeSave(blockArray) {
             blk.content[el.dataset.prop] = el.innerHTML;
         }
     });
+    normalizeTextFields(blockArray);
+}
+
+function normalizeTextFields(blockArray) {
+    if (!blockArray) return;
+    blockArray.forEach(b => {
+        const t = typeof b.type === 'string' ? b.type.toLowerCase() : '';
+        if (['heading', 'subheading', 'importantnote', 'quote', 'paragraph'].includes(t)) {
+            const html = b.content?.html || '';
+            const hasHtml = html && html.trim();
+            const hasText = b.content?.text && b.content.text.trim();
+            if (hasHtml && !hasText) {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = html;
+                b.content.text = tmp.textContent || tmp.innerText || '';
+            }
+        }
+        if (b.type === 'Grid' && b.content && b.content.columnBlocks && Array.isArray(b.content.columnBlocks)) {
+            b.content.columnBlocks.forEach(col => normalizeTextFields(col));
+        }
+    });
 }
 
 // --- Inline Math for Contenteditable (KaTeX render) ---
@@ -1055,9 +1089,8 @@ async function saveNote(isPublish, selectedCourseId = null) {
             ? `${API_BASE_URL}/api/admin/notes/${noteId}`
             : `${API_BASE_URL}/api/admin/notes`;
 
-        const noteRes = await fetch(noteUrl, {
+        const noteRes = await apiFetchJson(noteUrl, {
             method,
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 title,
                 courseId: selectedCourseId ? parseInt(selectedCourseId) : null,
@@ -1080,9 +1113,8 @@ async function saveNote(isPublish, selectedCourseId = null) {
             content: b.content
         }));
 
-        const blocksRes = await fetch(`${API_BASE_URL}/api/admin/notes/${targetId}/blocks`, {
+        const blocksRes = await apiFetchJson(`${API_BASE_URL}/api/admin/notes/${targetId}/blocks`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(blocksPayload)
         });
 
@@ -1092,7 +1124,7 @@ async function saveNote(isPublish, selectedCourseId = null) {
         }
 
         if (isPublish) {
-            const pubRes = await fetch(`${API_BASE_URL}/api/admin/notes/${targetId}/publish`, { method: 'POST' });
+            const pubRes = await apiFetch(`${API_BASE_URL}/api/admin/notes/${targetId}/publish`, { method: 'POST' });
             if (!pubRes.ok) throw new Error('Yayınlama başarısız.');
         }
 
@@ -1120,7 +1152,7 @@ function normalizeBlocksRecursive(blockArray) {
 
 async function loadNote(id) {
     try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/notes/${id}`);
+        const res = await apiFetch(`${API_BASE_URL}/api/admin/notes/${id}`);
         if (!res.ok) throw new Error('Not yüklenemedi: ' + res.status);
         const data = await res.json();
 
@@ -1204,12 +1236,12 @@ function renderPreviewBlocks(container, items) {
         if (t === 'Heading') {
             const lvl = Math.min(Math.max(parseInt(block.content?.level ?? 2), 1), 4);
             const textColor = { black:'#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || '#162d42';
-            el.innerHTML = `<h${lvl} class="text-4xl font-black mt-12 mb-4 tracking-tight uppercase border-l-4 border-brand-teal pl-5" style="color:${textColor}">${block.content?.html || block.content?.text || ''}</h${lvl}>`;
+            el.innerHTML = `<h${lvl} class="text-4xl font-black mt-12 mb-4 tracking-tight uppercase border-l-4 border-brand-teal pl-5" style="color:${textColor}">${escapeHtml(block.content?.html || block.content?.text || '')}</h${lvl}>`;
         } else if (t === 'Subheading') {
             const textColor = { black:'#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || '#162d42';
-            el.innerHTML = `<h3 class="text-2xl font-bold mt-6 mb-3 tracking-tight" style="color:${textColor}"><span class="subheading-dash">- </span>${block.content?.html || block.content?.text || ''}</h3>`;
+            el.innerHTML = `<h3 class="text-2xl font-bold mt-6 mb-3 tracking-tight" style="color:${textColor}"><span class="subheading-dash">- </span>${escapeHtml(block.content?.html || block.content?.text || '')}</h3>`;
         } else if (t === 'ImportantNote') {
-            el.innerHTML = `<div class="p-7 rounded-3xl text-white shadow-xl" style="background:#2d7a6f"><div class="flex items-center gap-3 mb-2"><i data-lucide="info" class="w-5 h-5"></i><strong class="italic underline underline-offset-4">Önemli Bilgi</strong></div><p class="leading-relaxed">${block.content?.html || block.content?.text || ''}</p></div>`;
+            el.innerHTML = `<div class="p-7 rounded-3xl text-white shadow-xl" style="background:#2d7a6f"><div class="flex items-center gap-3 mb-2"><i data-lucide="info" class="w-5 h-5"></i><strong class="italic underline underline-offset-4">Önemli Bilgi</strong></div><p class="leading-relaxed">${escapeHtml(block.content?.html || block.content?.text || '')}</p></div>`;
         } else if (t === 'Code') {
             el.innerHTML = `<div class="p-6 rounded-3xl bg-slate-900 border border-white/10"><pre class="text-teal-300 font-mono text-sm whitespace-pre-wrap break-words"><code>${escapeHtml(block.content?.code)}</code></pre></div>`;
         } else if (t === 'Image') {
@@ -1229,12 +1261,14 @@ function renderPreviewBlocks(container, items) {
         } else if (t === 'List') {
             const intro = block.content?.intro || '';
             const items = block.content?.items || [];
-            const introHtml = intro ? `<p class="text-lg text-slate-600 dark:text-slate-300 mb-3 font-medium">${escapeHtml(intro)}</p>` : '';
-            const lis = items.filter(i => i.trim()).map(i => `<li class="mb-1">${escapeHtml(i)}</li>`).join('');
+            const clean = (s) => (window.DOMPurify) ? window.DOMPurify.sanitize(String(s)) : escapeHtml(String(s));
+            const introHtml = intro ? `<p class="text-lg text-slate-600 dark:text-slate-300 mb-3 font-medium">${clean(intro)}</p>` : '';
+            const lis = items.filter(i => i.trim()).map(i => `<li class="mb-1">${clean(i)}</li>`).join('');
             el.innerHTML = `${introHtml}<ol class="list-decimal pl-6 text-lg text-slate-600 dark:text-slate-300 space-y-1 font-medium">${lis}</ol>`;
         } else if (t === 'Paragraph') {
             const html = block.content?.html || block.content?.text || '';
-            el.innerHTML = `<div class="text-xl leading-relaxed text-slate-600 dark:text-slate-300 font-medium">${html}</div>`;
+            const safeHtml = (window.DOMPurify) ? window.DOMPurify.sanitize(String(html)) : escapeHtml(html);
+            el.innerHTML = `<div class="text-xl leading-relaxed text-slate-600 dark:text-slate-300 font-medium">${safeHtml}</div>`;
         } else if (t === 'DoubleImage') {
             const urls = block.content?.urls || [];
             const cap = escapeHtml(block.content?.caption);
@@ -1297,10 +1331,9 @@ function renderGridPreview(container, block) {
     const colBlocks = c.columnBlocks || [];
     const isMatrix = c.layout === 'matrix2x2';
     const isWideBottom = c.layout === 'top-two-bottom-wide';
-    const total = cols.reduce((a, b) => a + b, 0);
     const gridDiv = document.createElement('div');
-    gridDiv.className = 'grid gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50/50 dark:bg-slate-800/50';
-    gridDiv.style.gridTemplateColumns = (isMatrix || isWideBottom) ? '1fr 1fr' : cols.map(v => `${(v / total) * 100}%`).join(' ');
+    gridDiv.className = 'grid gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50/50 dark:bg-slate-800/50 w-full min-w-0 overflow-hidden';
+    gridDiv.style.gridTemplateColumns = (isMatrix || isWideBottom) ? '1fr 1fr' : cols.map(v => `${v}fr`).join(' ');
     gridDiv.style.display = 'grid';
     colBlocks.forEach((blocks, idx) => {
         const colDiv = document.createElement('div');

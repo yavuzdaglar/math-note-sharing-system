@@ -4,9 +4,9 @@ namespace Domain.Interfaces;
 
 public interface ICourseRepository
 {
-    List<Course> GetAll();
-    Course? GetById(int id);
-    void Add(Course entity);
-    void Update(Course entity);
-    void Delete(int id);
+    Task<List<Course>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<Course?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<bool> AddAsync(Course entity, CancellationToken cancellationToken = default);
+    Task<bool> UpdateAsync(Course entity, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 }

@@ -1,6 +1,14 @@
 @{
     ViewData["Title"] = "Not Düzenle";
+
+    var apiBaseUrl = (ViewBag.ApiBaseUrl as string) ?? "https://localhost:7078";
+    var apiToken = ViewBag.ApiToken as string ?? "";
 }
+
+<script>
+    window.API_BASE_URL = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(apiBaseUrl));
+    window.API_TOKEN = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(apiToken));
+</script>
 
 <button type="button" onclick="window.location.href='/Admin'" class="editor-back-btn fixed top-4 z-[9999] flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-700 shadow-md backdrop-blur hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200">
     <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -131,17 +139,26 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-    <script src="~/js/block-editor.js?v=25"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+    <script src="~/js/block-editor.js?v=28"></script>
     <script>
         const noteId = @(ViewBag.NoteId ?? 0);
+        const editorApiBase = window.API_BASE_URL || 'https://localhost:7078';
+        const editorApiToken = window.API_TOKEN || '';
+
+        function editorApiFetch(url, options = {}) {
+            const headers = new Headers(options.headers || {});
+            if (editorApiToken) headers.set('Authorization', `Bearer ${editorApiToken}`);
+            if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+            return fetch(url, { ...options, headers });
+        }
 
         async function fetchCategories() {
             try {
-                const resp = await fetch('https://localhost:7078/api/coursecategories');
+                const resp = await fetch(`${editorApiBase}/api/coursecategories`);
                 const cats = await resp.json();
                 const sel = document.getElementById('categorySelect');
-                cats.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
+                cats.forEach(c => { sel.innerHTML += `<option value="${c.id}">${escapeOptionText(c.name)}</option>`; });
             } catch (e) { console.error('fetchCategories:', e); }
         }
 
@@ -150,11 +167,16 @@
             sel.innerHTML = '<option value="">Ders Seçin...</option>';
             if (!catId) return;
             try {
-                const resp = await fetch('https://localhost:7078/api/courses');
+                const resp = await fetch(`${editorApiBase}/api/courses`);
                 const courses = await resp.json();
                 courses.filter(c => c.courseCategoryId == catId)
-                       .forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
+                       .forEach(c => { sel.innerHTML += `<option value="${c.id}">${escapeOptionText(c.name)}</option>`; });
             } catch (e) { console.error('loadCourses:', e); }
+        }
+
+        function escapeOptionText(v) {
+            return (v === null || v === undefined ? '' : String(v))
+                .replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
 
         window.onload = async () => {

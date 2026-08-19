@@ -39,17 +39,14 @@ public class NoteRepository : INoteRepository
             .AnyAsync(n => n.CourseId == courseId && (!excludeNoteId.HasValue || n.Id != excludeNoteId.Value), cancellationToken);
     }
 
-    public async Task<(IReadOnlyList<Note> Items, int TotalCount)> GetPagedAsync(
+    public async Task<(IReadOnlyList<NoteListItem> Items, int TotalCount)> GetPagedAsync(
         NoteStatus? status,
         string? search,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        IQueryable<Note> query = _context.Notes.AsNoTracking()
-            .Include(n => n.Course)
-                .ThenInclude(c => c.CourseCategory)
-            .Include(n => n.Blocks);
+        IQueryable<Note> query = _context.Notes.AsNoTracking();
 
         if (status.HasValue)
         {
@@ -66,6 +63,20 @@ public class NoteRepository : INoteRepository
             .OrderByDescending(n => n.UpdatedAtUtc)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(n => new NoteListItem
+            {
+                Id = n.Id,
+                Title = n.Title,
+                Slug = n.Slug,
+                Status = n.Status,
+                CourseId = n.CourseId,
+                CourseName = n.Course != null ? n.Course.Name : null,
+                CourseCategoryName = n.Course != null && n.Course.CourseCategory != null ? n.Course.CourseCategory.Name : null,
+                BlockCount = n.Blocks.Count,
+                CreatedAtUtc = n.CreatedAtUtc,
+                UpdatedAtUtc = n.UpdatedAtUtc,
+                PublishedAtUtc = n.PublishedAtUtc
+            })
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);
@@ -82,8 +93,20 @@ public class NoteRepository : INoteRepository
         _context.Notes.Remove(note);
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken)
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
     {
-        return _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            throw new Domain.Exceptions.UniqueConstraintViolationException("Benzersizlik kisiti ihlal edildi.", ex);
+        }
+    }
+
+    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
+    {
+        return ex.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 };
     }
 }

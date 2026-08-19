@@ -5,7 +5,21 @@ namespace UI.Controllers;
 
 public class NotesController : Controller
 {
-    private bool IsAdmin => HttpContext.Session.GetString("IsAdmin") == "true";
+    private readonly IConfiguration _configuration;
+
+    public NotesController(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
+
+    private bool IsAdmin => HttpContext.Session.GetString(AccountController.SessionIsAdminKey) == "true"
+        && !string.IsNullOrEmpty(HttpContext.Session.GetString(AccountController.SessionTokenKey));
+
+    private void SetApiViewBag()
+    {
+        ViewBag.ApiBaseUrl = (_configuration["ApiBaseUrl"] ?? "https://localhost:7078/").TrimEnd('/');
+        ViewBag.ApiToken = HttpContext.Session.GetString(AccountController.SessionTokenKey);
+    }
 
     public IActionResult Index()
     {
@@ -18,6 +32,7 @@ public class NotesController : Controller
     {
         if (!IsAdmin) return RedirectToAction("Index", "Home");
         ViewBag.NoteId = 0;
+        SetApiViewBag();
         return View("Editor");
     }
 
@@ -26,6 +41,7 @@ public class NotesController : Controller
     {
         if (!IsAdmin) return RedirectToAction("Index", "Home");
         ViewBag.NoteId = id;
+        SetApiViewBag();
         return View("Editor");
     }
 }

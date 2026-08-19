@@ -7,41 +7,48 @@ namespace Application.Services;
 
 public class CourseCategoryService : ICourseCategoryService
 {
+    private const int NameMaxLength = 100;
+
     private readonly ICourseCategoryRepository _repository;
 
     public CourseCategoryService(ICourseCategoryRepository repository)
     {
         _repository = repository;
     }
-    
-    public List<CourseCategoryDto> GetAllCategories()
+
+    public async Task<List<CourseCategoryDto>> GetAllCategoriesAsync(CancellationToken cancellationToken)
     {
-        var entities = _repository.GetAll();
+        var entities = await _repository.GetAllAsync(cancellationToken);
         return entities.Select(e => new CourseCategoryDto { Id = e.Id, Name = e.Name }).ToList();
     }
 
-    public CourseCategoryDto? GetCategoryById(int id)
+    public async Task<CourseCategoryDto?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken)
     {
-        var entity = _repository.GetById(id);
+        var entity = await _repository.GetByIdAsync(id, cancellationToken);
         if (entity == null) return null;
-        
         return new CourseCategoryDto { Id = entity.Id, Name = entity.Name };
     }
 
-    public void AddCategory(CourseCategoryCreateDto dto)
+    public async Task<int?> AddCategoryAsync(CourseCategoryCreateDto dto, CancellationToken cancellationToken)
     {
-        var entity = new CourseCategory { Name = dto.Name };
-        _repository.Add(entity);
+        var name = dto.Name?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(name) || name.Length > NameMaxLength) return null;
+
+        var entity = new CourseCategory { Name = name };
+        if (!await _repository.AddAsync(entity, cancellationToken)) return null;
+        return entity.Id;
     }
 
-    public void UpdateCategory(CourseCategoryUpdateDto dto)
+    public async Task<bool> UpdateCategoryAsync(CourseCategoryUpdateDto dto, CancellationToken cancellationToken)
     {
-        var entity = new CourseCategory { Id = dto.Id, Name = dto.Name };
-        _repository.Update(entity);
+        var name = dto.Name?.Trim() ?? string.Empty;
+        if (name.Length > NameMaxLength) return false;
+
+        return await _repository.UpdateAsync(new CourseCategory { Id = dto.Id, Name = name }, cancellationToken);
     }
 
-    public void DeleteCategory(int id)
+    public async Task<bool> DeleteCategoryAsync(int id, CancellationToken cancellationToken)
     {
-        _repository.Delete(id);
+        return await _repository.DeleteAsync(id, cancellationToken);
     }
 }

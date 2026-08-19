@@ -1,5 +1,7 @@
 using Application.DTOs;
 using Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -16,37 +18,41 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(_courseService.GetAllCourses());
+        return Ok(await _courseService.GetAllCoursesAsync(cancellationToken));
     }
 
     [HttpGet("{id}")]
-    public IActionResult GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
-        var course = _courseService.GetCourseById(id);
+        var course = await _courseService.GetCourseByIdAsync(id, cancellationToken);
         if (course == null) return NotFound();
         return Ok(course);
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
-    public IActionResult Add([FromBody] CourseCreateDto dto)
+    public async Task<IActionResult> Add([FromBody] CourseCreateDto dto, CancellationToken cancellationToken)
     {
-        _courseService.AddCourse(dto);
-        return Ok("Ders eklendi!");
+        var id = await _courseService.AddCourseAsync(dto, cancellationToken);
+        if (id == null) return BadRequest("Ders adı 1-100 karakter olmalı ve kategori seçilmelidir.");
+        return StatusCode(StatusCodes.Status201Created, new { id, name = dto.Name, courseCategoryId = dto.CourseCategoryId });
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPut]
-    public IActionResult Update([FromBody] CourseUpdateDto dto)
+    public async Task<IActionResult> Update([FromBody] CourseUpdateDto dto, CancellationToken cancellationToken)
     {
-        _courseService.UpdateCourse(dto);
-        return Ok("Ders güncellendi!");
+        if (!await _courseService.UpdateCourseAsync(dto, cancellationToken)) return BadRequest("Ders bulunamadı veya ders adı çok uzun.");
+        return Ok(new { id = dto.Id, name = dto.Name, courseCategoryId = dto.CourseCategoryId });
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        _courseService.DeleteCourse(id);
-        return Ok("Ders silindi!");
+        if (!await _courseService.DeleteCourseAsync(id, cancellationToken)) return NotFound("Ders bulunamadı.");
+        return NoContent();
     }
 }

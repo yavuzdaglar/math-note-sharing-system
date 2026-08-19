@@ -39,6 +39,11 @@ public class AppDbContext : DbContext
             entity.Property(n => n.Status).IsRequired();
             entity.HasIndex(n => n.Slug).IsUnique().HasFilter("[Slug] IS NOT NULL");
 
+            // Ayni derse ayni anda iki not yayinlanmasini veritabani seviyesinde engelle (race condition).
+            entity.HasIndex(n => n.CourseId).IsUnique().HasFilter("[CourseId] IS NOT NULL");
+
+            entity.Property(n => n.RowVersion).IsRowVersion();
+
             entity.HasMany(n => n.Blocks)
                 .WithOne(b => b.Note)
                 .HasForeignKey(b => b.NoteId)

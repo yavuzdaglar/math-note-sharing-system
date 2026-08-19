@@ -2,6 +2,9 @@ using System.Text.Json;
 using Application.DTOs;
 using Application.Interfaces;
 using Application.Models;
+using Application.Security;
+using Application.StringExtensions;
+using Domain.Exceptions;
 using Domain.Interfaces;
 using Entities;
 
@@ -9,6 +12,12 @@ namespace Application.Services;
 
 public class NoteService : INoteService
 {
+    private const int MaxBlocksPerNote = 100;
+    private const int MaxGridColumns = 6;
+    private const int MaxDepth = 2;
+    private const int MaxStringLength = 20_000;
+    private const int MaxCodeLength = 500_000;
+
     private readonly INoteRepository _repository;
 
     public NoteService(INoteRepository repository)
@@ -37,13 +46,13 @@ public class NoteService : INoteService
             Items = items.Select(n => new NoteSummaryDto
             {
                 Id = n.Id,
-                Title = n.Title,
+                Title = n.Title ?? string.Empty,
                 Slug = n.Slug,
                 Status = n.Status,
-                BlockCount = n.Blocks.Count,
+                BlockCount = n.BlockCount,
                 CourseId = n.CourseId,
-                CourseName = n.Course?.Name,
-                CourseCategoryName = n.Course?.CourseCategory?.Name,
+                CourseName = n.CourseName,
+                CourseCategoryName = n.CourseCategoryName,
                 CreatedAtUtc = n.CreatedAtUtc,
                 UpdatedAtUtc = n.UpdatedAtUtc,
                 PublishedAtUtc = n.PublishedAtUtc
@@ -76,10 +85,8 @@ public class NoteService : INoteService
 
     public async Task<ServiceResult<NoteDetailDto>> CreateNoteAsync(NoteCreateDto dto, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(dto.Title))
-        {
-            return ServiceResult<NoteDetailDto>.Fail("Baslik zorunludur.", 400);
-        }
+        if (!dto.Title.CleanLengthOk(1, 200)) return ServiceResult<NoteDetailDto>.Fail("Baslik 1-200 karakter olmalidir.", 400);
+        if (dto.Blocks.Count > MaxBlocksPerNote) return ServiceResult<NoteDetailDto>.Fail($"Bir nota en fazla {MaxBlocksPerNote} blok eklenebilir.", 400);
 
         var now = DateTime.UtcNow;
         var isPublished = dto.Status.HasValue
@@ -114,7 +121,7 @@ public class NoteService : INoteService
 
         if (dto.Blocks.Count > 0)
         {
-            var validation = ValidateBlocks(dto.Blocks);
+            var validation = ValidateBlocks(dto.Blocks, depth: 0);
             if (!validation.Succeeded)
             {
                 return ServiceResult<NoteDetailDto>.Fail(validation.Error ?? "Blok dogrulama hatasi.", validation.StatusCode);
@@ -124,7 +131,14 @@ public class NoteService : INoteService
         }
 
         await _repository.AddAsync(note, cancellationToken);
-        await _repository.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _repository.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintViolationException)
+        {
+            return ServiceResult<NoteDetailDto>.Fail("Bu ders zaten bir nota bagli.", 409);
+        }
 
         return ServiceResult<NoteDetailDto>.Success(MapNoteDetail(note, true), 201);
     }
@@ -134,7 +148,7 @@ public class NoteService : INoteService
         var note = await _repository.GetByIdAsync(id, true, cancellationToken);
         if (note == null) return ServiceResult<NoteDetailDto>.Fail("Not bulunamadi.", 404);
 
-        if (string.IsNullOrWhiteSpace(dto.Title)) return ServiceResult<NoteDetailDto>.Fail("Baslik zorunludur.", 400);
+        if (!dto.Title.CleanLengthOk(1, 200)) return ServiceResult<NoteDetailDto>.Fail("Baslik 1-200 karakter olmalidir.", 400);
 
         var now = DateTime.UtcNow;
         note.Title = dto.Title.Trim();
@@ -172,7 +186,14 @@ public class NoteService : INoteService
             return ServiceResult<NoteDetailDto>.Fail("Yayinli not icin ders secilmelidir.", 400);
         }
         
-        await _repository.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _repository.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintViolationException)
+        {
+            return ServiceResult<NoteDetailDto>.Fail("Bu ders zaten bir nota bagli.", 409);
+        }
         
         var updatedNote = await _repository.GetByIdAsync(id, true, cancellationToken);
         return ServiceResult<NoteDetailDto>.Success(MapNoteDetail(updatedNote!, true));
@@ -196,7 +217,9 @@ public class NoteService : INoteService
         var note = await _repository.GetByIdAsync(noteId, true, cancellationToken);
         if (note == null) return ServiceResult<List<BlockDto>>.Fail("Not bulunamadı.", 404);
 
-        var validation = ValidateBlocks(blocks);
+        if (blocks.Count > MaxBlocksPerNote) return ServiceResult<List<BlockDto>>.Fail($"Bir nota en fazla {MaxBlocksPerNote} blok eklenebilir.", 400);
+
+        var validation = ValidateBlocks(blocks, depth: 0);
         if (!validation.Succeeded) return ServiceResult<List<BlockDto>>.Fail(validation.Error ?? "Blok doğrulama hatası.", validation.StatusCode);
 
         var now = DateTime.UtcNow;
@@ -207,11 +230,12 @@ public class NoteService : INoteService
             NoteBlock block;
             if (blockDto.Id > 0) // Güncelleme
             {
-                block = note.Blocks.FirstOrDefault(b => b.Id == blockDto.Id);
-                if (block == null) return ServiceResult<List<BlockDto>>.Fail($"Blok ID: {blockDto.Id} bulunamadı.", 404);
+                var existingBlock = note.Blocks.FirstOrDefault(b => b.Id == blockDto.Id);
+                if (existingBlock == null) return ServiceResult<List<BlockDto>>.Fail($"Blok ID: {blockDto.Id} bulunamadı.", 404);
+                block = existingBlock;
                 
                 block.Type = blockDto.Type;
-                block.ContentJson = blockDto.Content.GetRawText();
+                block.ContentJson = SanitizeBlock(blockDto.Type, blockDto.Content).GetRawText();
                 block.Order = blockDto.Order ?? block.Order;
                 block.UpdatedAtUtc = now;
                 blockIdsToKeep.Add(block.Id);
@@ -222,7 +246,7 @@ public class NoteService : INoteService
                 {
                     Type = blockDto.Type,
                     Order = blockDto.Order ?? (note.Blocks.Any() ? note.Blocks.Max(b => b.Order) + 1 : 1),
-                    ContentJson = blockDto.Content.GetRawText(),
+                    ContentJson = SanitizeBlock(blockDto.Type, blockDto.Content).GetRawText(),
                     CreatedAtUtc = now,
                     UpdatedAtUtc = now
                 };
@@ -258,14 +282,14 @@ public class NoteService : INoteService
             return ServiceResult<BlockDto>.Fail("Blok bulunamadi.", 404);
         }
 
-        var validation = ValidateBlocks(new List<BlockUpsertDto> { block });
+        var validation = ValidateBlocks(new List<BlockUpsertDto> { block }, depth: 0);
         if (!validation.Succeeded)
         {
             return ServiceResult<BlockDto>.Fail(validation.Error ?? "Blok dogrulama hatasi.", validation.StatusCode);
         }
 
         target.Type = block.Type;
-        target.ContentJson = block.Content.GetRawText();
+        target.ContentJson = SanitizeBlock(block.Type, block.Content).GetRawText();
         if (block.Order.HasValue && block.Order.Value > 0)
         {
             target.Order = block.Order.Value;
@@ -354,7 +378,14 @@ public class NoteService : INoteService
         note.PublishedAtUtc = DateTime.UtcNow;
         note.UpdatedAtUtc = note.PublishedAtUtc.Value;
 
-        await _repository.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _repository.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintViolationException)
+        {
+            return ServiceResult<NoteDetailDto>.Fail("Bu ders zaten bir nota bagli.", 409);
+        }
         return ServiceResult<NoteDetailDto>.Success(MapNoteDetail(note, true));
     }
 
@@ -425,7 +456,7 @@ public class NoteService : INoteService
             {
                 Type = block.Type,
                 Order = order,
-                ContentJson = block.Content.GetRawText(),
+                ContentJson = SanitizeBlock(block.Type, block.Content).GetRawText(),
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now
             });
@@ -477,11 +508,13 @@ public class NoteService : INoteService
         await _repository.SaveChangesAsync(cancellationToken);
     }
 
-    private static ServiceResult<bool> ValidateBlocks(List<BlockUpsertDto> blocks)
+    private static ServiceResult<bool> ValidateBlocks(List<BlockUpsertDto> blocks, int depth)
     {
+        if (depth > MaxDepth) return ServiceResult<bool>.Fail("Blok ic ice cok derin.", 400);
+
         foreach (var block in blocks)
         {
-            var error = ValidateBlockContent(block);
+            var error = ValidateBlockContent(block, depth);
             if (error != null)
             {
                 return ServiceResult<bool>.Fail(error, 400);
@@ -491,7 +524,7 @@ public class NoteService : INoteService
         return ServiceResult<bool>.Success(true);
     }
 
-    private static string? ValidateBlockContent(BlockUpsertDto block)
+    private static string? ValidateBlockContent(BlockUpsertDto block, int depth)
     {
         if (block.Content.ValueKind != JsonValueKind.Object)
         {
@@ -505,37 +538,35 @@ public class NoteService : INoteService
                 {
                     return "Metin bloklari icin 'html' veya 'text' zorunlu.";
                 }
-                return null;
+                return LimitStringProperties(block.Content, "html", "text");
             case NoteBlockType.Heading:
             case NoteBlockType.ImportantNote:
             case NoteBlockType.Quote:
-                if (!TryGetString(block.Content, "text", out _))
+            case NoteBlockType.Subheading:
+                if (!TryGetString(block.Content, "text", out _) && !TryGetString(block.Content, "html", out _))
                 {
-                    return "Metin bloklari icin 'text' zorunlu.";
+                    return "Metin bloklari icin 'text' veya 'html' zorunlu.";
                 }
-                return null;
+                return LimitStringProperties(block.Content, "text", "html");
             case NoteBlockType.Video:
-                if (!TryGetString(block.Content, "url", out var videoUrl))
-                {
-                    return null;
-                }
-                return null;
             case NoteBlockType.Image:
-                if (!TryGetString(block.Content, "url", out var imageUrl))
+            case NoteBlockType.Gif:
+                if (TryGetString(block.Content, "url", out var url))
                 {
-                    return null;
+                    if (!IsSafeHttpUrl(url)) return "Gecersiz URL.";
+                    return LimitStringProperties(block.Content, "url");
                 }
                 return null;
             case NoteBlockType.DoubleImage:
-                if (!TryGetStringArray(block.Content, "urls", 2))
-                {
-                    return "DoubleImage bloklari icin 2 adet 'urls' zorunlu.";
-                }
-                return null;
+                return ValidateUrlArray(limit: MaxStringLength, block.Content, "urls", 2);
             case NoteBlockType.Code:
                 if (!TryGetString(block.Content, "code", out _))
                 {
                     return "Code bloklari icin 'code' zorunlu.";
+                }
+                if (TryGetString(block.Content, "code", out var code) && code.Length > MaxCodeLength)
+                {
+                    return "Code cok uzun.";
                 }
                 return null;
             case NoteBlockType.List:
@@ -543,61 +574,115 @@ public class NoteService : INoteService
                 {
                     return "List bloklari icin en az 1 'items' zorunlu.";
                 }
-                return null;
-            case NoteBlockType.Subheading:
-                if (!TryGetStringLenient(block.Content, "text", out _))
-                {
-                    return "Alt baslik icin 'text' zorunlu.";
-                }
-                return null;
+                return ValidateUrlArray(MaxStringLength, block.Content, "items", 1);
             case NoteBlockType.Math:
                 if (!TryGetString(block.Content, "latex", out _))
                 {
                     return "Math bloklari icin 'latex' zorunlu.";
                 }
-                return null;
-            case NoteBlockType.Gif:
-                return null;
+                return LimitStringProperties(block.Content, "latex");
             case NoteBlockType.Grid:
-                if (!block.Content.TryGetProperty("columns", out var colsEl) || colsEl.ValueKind != JsonValueKind.Array || colsEl.GetArrayLength() < 2)
-                {
-                    return "Grid en az 2 kolon icermelidir.";
-                }
-                if (!block.Content.TryGetProperty("columnBlocks", out var colBlocksEl) || colBlocksEl.ValueKind != JsonValueKind.Array)
-                {
-                    return "Grid 'columnBlocks' zorunludur.";
-                }
-                if (colsEl.GetArrayLength() != colBlocksEl.GetArrayLength())
-                {
-                    return "Grid 'columns' ve 'columnBlocks' esit sayida olmalidir.";
-                }
-                foreach (var colBlock in colBlocksEl.EnumerateArray())
-                {
-                    if (colBlock.ValueKind != JsonValueKind.Array) continue;
-                    foreach (var sub in colBlock.EnumerateArray())
-                    {
-                        if (sub.ValueKind != JsonValueKind.Object) continue;
-                        if (!sub.TryGetProperty("type", out var typeEl) || typeEl.ValueKind != JsonValueKind.String)
-                        {
-                            return "Grid icindeki bloklarda 'type' zorunludur.";
-                        }
-                        if (!sub.TryGetProperty("content", out var subContent) || subContent.ValueKind != JsonValueKind.Object)
-                        {
-                            return "Grid icindeki bloklarda 'content' zorunludur.";
-                        }
-                        var subBlock = new BlockUpsertDto
-                        {
-                            Type = Enum.Parse<NoteBlockType>(typeEl.GetString()!, true),
-                            Content = subContent
-                        };
-                        var subError = ValidateBlockContent(subBlock);
-                        if (subError != null) return subError;
-                    }
-                }
-                return null;
+                return ValidateGrid(block, depth);
             default:
                 return "Bilinmeyen blok tipi.";
         }
+    }
+
+    private static string? ValidateGrid(BlockUpsertDto block, int depth)
+    {
+        if (depth >= MaxDepth) return "Grid bloklari daha fazla ic ice gecirilemez.";
+
+        if (!block.Content.TryGetProperty("columns", out var colsEl) || colsEl.ValueKind != JsonValueKind.Array || colsEl.GetArrayLength() < 2 || colsEl.GetArrayLength() > MaxGridColumns)
+        {
+            return $"Grid en az 2, en fazla {MaxGridColumns} kolon icermelidir.";
+        }
+        if (!block.Content.TryGetProperty("columnBlocks", out var colBlocksEl) || colBlocksEl.ValueKind != JsonValueKind.Array)
+        {
+            return "Grid 'columnBlocks' zorunludur.";
+        }
+        if (colsEl.GetArrayLength() != colBlocksEl.GetArrayLength())
+        {
+            return "Grid 'columns' ve 'columnBlocks' esit sayida olmalidir.";
+        }
+
+        foreach (var colBlock in colBlocksEl.EnumerateArray())
+        {
+            if (colBlock.ValueKind != JsonValueKind.Array) continue;
+            if (colBlock.GetArrayLength() > MaxBlocksPerNote)
+            {
+                return "Grid kolonunda cok fazla blok var.";
+            }
+            foreach (var sub in colBlock.EnumerateArray())
+            {
+                if (sub.ValueKind != JsonValueKind.Object) continue;
+                if (!sub.TryGetProperty("type", out var typeEl) || typeEl.ValueKind != JsonValueKind.String)
+                {
+                    return "Grid icindeki bloklarda 'type' zorunludur.";
+                }
+                if (!sub.TryGetProperty("content", out var subContent) || subContent.ValueKind != JsonValueKind.Object)
+                {
+                    return "Grid icindeki bloklarda 'content' zorunludur.";
+                }
+                if (!Enum.TryParse<NoteBlockType>(typeEl.GetString(), true, out var subType))
+                {
+                    return "Bilinmeyen blok tipi.";
+                }
+                var subBlock = new BlockUpsertDto
+                {
+                    Type = subType,
+                    Content = subContent
+                };
+                var subError = ValidateBlockContent(subBlock, depth + 1);
+                if (subError != null) return subError;
+            }
+        }
+        return null;
+    }
+
+    private static bool IsSafeHttpUrl(string url)
+    {
+        return Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+    }
+
+    private static string? LimitStringProperties(JsonElement content, params string[] properties)
+    {
+        foreach (var prop in properties)
+        {
+            if (content.TryGetProperty(prop, out var el) && el.ValueKind == JsonValueKind.String && el.GetString()!.Length > MaxStringLength)
+            {
+                return "Deger cok uzun.";
+            }
+        }
+        return null;
+    }
+
+    private static string? ValidateUrlArray(long limit, JsonElement content, string property, int minLength)
+    {
+        if (!content.TryGetProperty(property, out var element))
+        {
+            return $"{property} zorunlu.";
+        }
+        if (element.ValueKind != JsonValueKind.Array)
+        {
+            return $"{property} dizi olmali.";
+        }
+        var items = element.EnumerateArray().ToList();
+        if (items.Count < minLength)
+        {
+            return $"{property} icin en az {minLength} ogrenci gerekli.";
+        }
+        if (items.Count > 100)
+        {
+            return $"{property} cok fazla (en fazla 100).";
+        }
+        foreach (var item in items)
+        {
+            if (item.ValueKind != JsonValueKind.String) continue;
+            var s = item.GetString();
+            if (s != null && s.Length > limit) return $"{property} iceren deger cok uzun.";
+        }
+        return null;
     }
 
     private static bool TryGetString(JsonElement content, string property, out string value)
@@ -623,23 +708,6 @@ public class NoteService : INoteService
         return true;
     }
 
-    private static bool TryGetStringLenient(JsonElement content, string property, out string value)
-    {
-        value = string.Empty;
-        if (!content.TryGetProperty(property, out var element))
-        {
-            return false;
-        }
-
-        if (element.ValueKind != JsonValueKind.String)
-        {
-            return false;
-        }
-
-        value = element.GetString() ?? string.Empty;
-        return true;
-    }
-
     private static bool TryGetStringArray(JsonElement content, string property, int minLength)
     {
         if (!content.TryGetProperty(property, out var element))
@@ -659,5 +727,97 @@ public class NoteService : INoteService
         }
 
         return items.Any(i => i.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(i.GetString()));
+    }
+
+    /// <summary>
+    /// Kullanici girdisi olabilecek HTML alanlarini beyaz liste ile temizler
+    /// ve kaydedilmeden once XSS'e karsi arindirir.
+    /// </summary>
+    private static JsonElement SanitizeBlock(NoteBlockType type, JsonElement content)
+    {
+        if (content.ValueKind != JsonValueKind.Object)
+        {
+            return content.Clone();
+        }
+
+        var dict = new Dictionary<string, object?>();
+
+        switch (type)
+        {
+            case NoteBlockType.Paragraph:
+                if (content.TryGetProperty("html", out var htmlEl) && htmlEl.ValueKind == JsonValueKind.String)
+                {
+                    dict["html"] = HtmlSanitizerUtil.Sanitize(htmlEl.GetString());
+                }
+                break;
+            case NoteBlockType.List:
+                if (content.TryGetProperty("intro", out var introEl) && introEl.ValueKind == JsonValueKind.String)
+                {
+                    dict["intro"] = HtmlSanitizerUtil.Sanitize(introEl.GetString());
+                }
+                if (content.TryGetProperty("items", out var itemsEl) && itemsEl.ValueKind == JsonValueKind.Array)
+                {
+                    var items = itemsEl.EnumerateArray()
+                        .Select(i => i.ValueKind == JsonValueKind.String
+                            ? JsonSerializer.SerializeToElement(HtmlSanitizerUtil.Sanitize(i.GetString()))
+                            : i.Clone())
+                        .ToList();
+                    dict["items"] = items;
+                }
+                break;
+            case NoteBlockType.Grid:
+                if (content.TryGetProperty("columnBlocks", out var gridColsEl) && gridColsEl.ValueKind == JsonValueKind.Array)
+                {
+                    var cleanedCols = gridColsEl.EnumerateArray().Select(col =>
+                    {
+                        if (col.ValueKind != JsonValueKind.Array) return col.Clone();
+
+                        var cleanedCol = col.EnumerateArray().Select(sub =>
+                        {
+                            if (sub.ValueKind != JsonValueKind.Object) return sub.Clone();
+                            if (!sub.TryGetProperty("type", out var subTypeEl) || subTypeEl.ValueKind != JsonValueKind.String)
+                            {
+                                return sub.Clone();
+                            }
+                            if (!Enum.TryParse<NoteBlockType>(subTypeEl.GetString(), true, out var subType))
+                            {
+                                return sub.Clone();
+                            }
+                            if (!sub.TryGetProperty("content", out var subContent) || subContent.ValueKind != JsonValueKind.Object)
+                            {
+                                return sub.Clone();
+                            }
+
+                            var cleanedSubContent = SanitizeBlock(subType, subContent);
+                            var subDict = new Dictionary<string, object?>();
+                            foreach (var prop in sub.EnumerateObject())
+                            {
+                                subDict[prop.Name] = prop.NameEquals("content") ? cleanedSubContent : prop.Value.Clone();
+                            }
+                            return JsonSerializer.SerializeToElement(subDict);
+                        }).ToList();
+
+                        return JsonSerializer.SerializeToElement(cleanedCol);
+                    }).ToList();
+
+                    dict["columnBlocks"] = cleanedCols;
+                }
+                break;
+        }
+
+        if (dict.Count == 0)
+        {
+            return content.Clone();
+        }
+
+        foreach (var prop in content.EnumerateObject())
+        {
+            if (!dict.ContainsKey(prop.Name))
+            {
+                dict[prop.Name] = prop.Value.Clone();
+            }
+        }
+
+        return JsonSerializer.SerializeToElement(dict);
     }
 }

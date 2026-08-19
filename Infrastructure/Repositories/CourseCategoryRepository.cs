@@ -1,6 +1,7 @@
 using Domain.Interfaces;
 using Entities;
 using Infrastructure.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
@@ -13,33 +14,36 @@ public class CourseCategoryRepository : ICourseCategoryRepository
         _context = context;
     }
 
-    public List<CourseCategory> GetAll() => _context.CourseCategories.ToList();
+    public async Task<List<CourseCategory>> GetAllAsync(CancellationToken cancellationToken)
+        => await _context.CourseCategories.OrderBy(x => x.Id).ToListAsync(cancellationToken);
 
-    public CourseCategory? GetById(int id) => _context.CourseCategories.FirstOrDefault(x => x.Id == id);
+    public async Task<CourseCategory?> GetByIdAsync(int id, CancellationToken cancellationToken)
+        => await _context.CourseCategories.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-    public void Add(CourseCategory entity)
+    public async Task<bool> AddAsync(CourseCategory entity, CancellationToken cancellationToken)
     {
-        _context.CourseCategories.Add(entity);
-        _context.SaveChanges();
+        await _context.CourseCategories.AddAsync(entity, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
-    public void Update(CourseCategory entity)
+    public async Task<bool> UpdateAsync(CourseCategory entity, CancellationToken cancellationToken)
     {
-        var item = GetById(entity.Id);
-        if (item != null)
-        {
-            item.Name = entity.Name;
-            _context.SaveChanges();
-        }
+        var item = await GetByIdAsync(entity.Id, cancellationToken);
+        if (item == null) return false;
+
+        item.Name = entity.Name;
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
-    public void Delete(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        var item = GetById(id);
-        if (item != null)
-        {
-            _context.CourseCategories.Remove(item);
-            _context.SaveChanges();
-        }
+        var item = await GetByIdAsync(id, cancellationToken);
+        if (item == null) return false;
+
+        _context.CourseCategories.Remove(item);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

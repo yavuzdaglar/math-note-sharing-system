@@ -2,12 +2,14 @@ using Application.DTOs;
 using Application.Interfaces;
 using Application.Models;
 using Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("api/admin/notes")]
+[Authorize(Roles = "Admin")]
 public class AdminNotesController : ControllerBase
 {
     private readonly INoteService _noteService;
@@ -54,7 +56,7 @@ public class AdminNotesController : ControllerBase
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var result = await _noteService.DeleteNoteAsync(id, cancellationToken);
-        return FromServiceResult(result);
+        return result.Succeeded ? NoContent() : FromServiceResult(result);
     }
 
     [HttpPost("{id:int}/blocks")]
@@ -75,7 +77,7 @@ public class AdminNotesController : ControllerBase
     public async Task<IActionResult> DeleteBlock(int id, int blockId, CancellationToken cancellationToken)
     {
         var result = await _noteService.DeleteBlockAsync(id, blockId, cancellationToken);
-        return FromServiceResult(result);
+        return result.Succeeded ? NoContent() : FromServiceResult(result);
     }
 
     [HttpPut("{id:int}/blocks/reorder")]

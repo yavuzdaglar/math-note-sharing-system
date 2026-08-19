@@ -4,9 +4,9 @@ namespace Application.Interfaces;
 
 public interface ICourseService
 {
-    List<CourseDto> GetAllCourses();
-    CourseDto? GetCourseById(int id);
-    void AddCourse(CourseCreateDto dto);
-    void UpdateCourse(CourseUpdateDto dto);
-    void DeleteCourse(int id);
+    Task<List<CourseDto>> GetAllCoursesAsync(CancellationToken cancellationToken = default);
+    Task<CourseDto?> GetCourseByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<int?> AddCourseAsync(CourseCreateDto dto, CancellationToken cancellationToken = default);
+    Task<bool> UpdateCourseAsync(CourseUpdateDto dto, CancellationToken cancellationToken = default);
+    Task<bool> DeleteCourseAsync(int id, CancellationToken cancellationToken = default);
 }

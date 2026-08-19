@@ -14,49 +14,53 @@ public class CourseRepository : ICourseRepository
         _context = context;
     }
 
-    public List<Course> GetAll() => _context.Courses.Include(x => x.CourseCategory).ToList();
+    public async Task<List<Course>> GetAllAsync(CancellationToken cancellationToken)
+        => await _context.Courses.Include(x => x.CourseCategory).OrderBy(x => x.Id).ToListAsync(cancellationToken);
 
-    public Course? GetById(int id) => _context.Courses.Include(x => x.CourseCategory).FirstOrDefault(x => x.Id == id);
+    public async Task<Course?> GetByIdAsync(int id, CancellationToken cancellationToken)
+        => await _context.Courses.Include(x => x.CourseCategory).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-    public void Add(Course entity)
+    public async Task<bool> AddAsync(Course entity, CancellationToken cancellationToken)
     {
-        _context.Courses.Add(entity);
-        _context.SaveChanges();
+        await _context.Courses.AddAsync(entity, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
-    public void Update(Course entity)
+    public async Task<bool> UpdateAsync(Course entity, CancellationToken cancellationToken)
     {
-        var item = GetById(entity.Id);
-        if (item != null)
-        {
-            item.Name = entity.Name;
-            item.CourseCategoryId = entity.CourseCategoryId;
-            _context.SaveChanges();
-        }
+        var item = await GetByIdAsync(entity.Id, cancellationToken);
+        if (item == null) return false;
+
+        item.Name = entity.Name;
+        item.CourseCategoryId = entity.CourseCategoryId;
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
-    public void Delete(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        var item = GetById(id);
-        if (item != null)
+        var item = await GetByIdAsync(id, cancellationToken);
+        if (item == null) return false;
+
+        var notes = await _context.Notes.Where(n => n.CourseId == id).ToListAsync(cancellationToken);
+        if (notes.Count > 0)
         {
-            var notes = _context.Notes.Where(n => n.CourseId == id).ToList();
-            if (notes.Count > 0)
+            var now = DateTime.UtcNow;
+            foreach (var note in notes)
             {
-                var now = DateTime.UtcNow;
-                foreach (var note in notes)
+                note.CourseId = null;
+                if (note.Status == NoteStatus.Published)
                 {
-                    note.CourseId = null;
-                    if (note.Status == NoteStatus.Published)
-                    {
-                        note.Status = NoteStatus.Draft;
-                        note.PublishedAtUtc = null;
-                    }
-                    note.UpdatedAtUtc = now;
+                    note.Status = NoteStatus.Draft;
+                    note.PublishedAtUtc = null;
                 }
+                note.UpdatedAtUtc = now;
             }
-            _context.Courses.Remove(item);
-            _context.SaveChanges();
         }
+
+        _context.Courses.Remove(item);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

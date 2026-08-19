@@ -107,11 +107,14 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("ParentId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("PublishedAtUtc")
                         .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<string>("Slug")
                         .HasMaxLength(200)
@@ -134,9 +137,9 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("ParentId");
+                    b.HasIndex("CourseId")
+                        .IsUnique()
+                        .HasFilter("[CourseId] IS NOT NULL");
 
                     b.HasIndex("Slug")
                         .IsUnique()
@@ -198,13 +201,7 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("Entities.Note", "Parent")
-                        .WithMany("ChildNotes")
-                        .HasForeignKey("ParentId");
-
                     b.Navigation("Course");
-
-                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("Entities.NoteBlock", b =>
@@ -231,8 +228,6 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Entities.Note", b =>
                 {
                     b.Navigation("Blocks");
-
-                    b.Navigation("ChildNotes");
                 });
 #pragma warning restore 612, 618
         }

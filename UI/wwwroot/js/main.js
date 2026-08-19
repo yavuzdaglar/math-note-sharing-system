@@ -32,6 +32,27 @@ document.addEventListener("DOMContentLoaded", () => {
 		return url;
 	};
 
+	const escapeHtml = (value) => {
+		const s = value === null || value === undefined ? '' : String(value);
+		return s.replace(/[&<>"']/g, (c) => ({
+			'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+		}[c]));
+	};
+
+	const safeHtml = (value, fallback = '') => {
+		const s = value === null || value === undefined ? '' : String(value);
+		if (!s.trim()) return fallback;
+		if (window.DOMPurify) return window.DOMPurify.sanitize(s);
+		return escapeHtml(s);
+	};
+
+	const escapeAttr = (value) => {
+		const s = value === null || value === undefined ? '' : String(value);
+		return s.replace(/["'<>`]/g, (c) => ({
+			'"': '&quot;', "'": '&#39;', '<': '&lt;', '>': '&gt;', '`': '&#96;'
+		}[c]));
+	};
+
 	const updateIcons = () => {
 		if (window.lucide) {
 			window.lucide.createIcons();
@@ -244,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	};
 
-	function renderBlocksIntoContainer(container, blocks) {
+	function renderBlocksIntoContainer(container, blocks, compact = false) {
 		const normalizeBlockType = (value) => {
 			if (value === null || value === undefined) return 0;
 			if (typeof value === "number") return value;
@@ -284,144 +305,182 @@ document.addEventListener("DOMContentLoaded", () => {
 			const el = document.createElement("div");
 			const isTopLevel = container.id === "note-content-area";
 			const _isDark = document.documentElement.classList.contains('dark');
-			el.className = isTopLevel ? "mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700" : "mb-4";
+			el.className = isTopLevel ? "mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700" : (compact ? "mb-3" : "mb-4");
 
 			const blockType = normalizeBlockType(block.type);
 			switch(blockType) {
-				case 0: { // Paragraph
-					const pHtml = block.content.html || block.content.text || "";
-					el.innerHTML = `<div class="p-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 shadow-sm text-lg leading-relaxed text-slate-700 dark:text-slate-300 break-words">${pHtml}</div>`;
-					break;
+case 0: { // Paragraph
+				const pHtml = block.content.html || block.content.text || "";
+				if (compact) {
+					el.innerHTML = `<div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 shadow-sm text-sm leading-relaxed text-slate-700 dark:text-slate-300 break-words">${safeHtml(pHtml)}</div>`;
+				} else {
+					el.innerHTML = `<div class="p-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 shadow-sm text-lg leading-relaxed text-slate-700 dark:text-slate-300 break-words">${safeHtml(pHtml)}</div>`;
 				}
-				case 7: { // Quote
-					const qHtml = block.content.text || block.content.html || "";
-					el.innerHTML = `<div class="p-6 rounded-2xl border-l-4 border-brand-teal bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm text-lg leading-relaxed italic text-slate-600 dark:text-slate-300">${qHtml}</div>`;
-					break;
+				break;
+			}
+case 7: { // Quote
+				const qHtml = block.content.text || block.content.html || "";
+				if (compact) {
+					el.innerHTML = `<div class="p-3 rounded-xl border-l-4 border-brand-teal bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm text-sm leading-relaxed italic text-slate-600 dark:text-slate-300">${safeHtml(qHtml)}</div>`;
+				} else {
+					el.innerHTML = `<div class="p-6 rounded-2xl border-l-4 border-brand-teal bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm text-lg leading-relaxed italic text-slate-600 dark:text-slate-300">${safeHtml(qHtml)}</div>`;
 				}
-				case 1: { // Heading
-					const level = block.content.level || 2;
-					const textColor = { black: _isDark ? '#e2e8f0' : '#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || (_isDark ? '#e2e8f0' : '#162d42');
-					el.innerHTML = `<h${level} class="text-4xl font-black mt-12 mb-6 tracking-tight uppercase border-l-4 border-brand-teal pl-6" style="color:${textColor}">${block.content.html || block.content.text || ''}</h${level}>`;
-					break;
+				break;
+			}
+case 1: { // Heading
+				const level = block.content.level || 2;
+				const textColor = { black: _isDark ? '#e2e8f0' : '#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || (_isDark ? '#e2e8f0' : '#162d42');
+				if (compact) {
+					el.innerHTML = `<h${level} class="text-xl font-bold mt-4 mb-3 tracking-tight border-l-4 border-brand-teal pl-3" style="color:${textColor}">${safeHtml(block.content.html || block.content.text || '')}</h${level}>`;
+				} else {
+					el.innerHTML = `<h${level} class="text-4xl font-black mt-12 mb-6 tracking-tight uppercase border-l-4 border-brand-teal pl-6" style="color:${textColor}">${safeHtml(block.content.html || block.content.text || '')}</h${level}>`;
 				}
-				case 9: { // Subheading
-					const shColor = { black: _isDark ? '#e2e8f0' : '#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || (_isDark ? '#e2e8f0' : '#162d42');
-					el.innerHTML = `<h3 class="text-2xl font-bold mt-6 mb-3 tracking-tight" style="color:${shColor}"><span class="subheading-dash">- </span>${block.content.html || block.content.text || ''}</h3>`;
-					break;
+				break;
+			}
+case 9: { // Subheading
+				const shColor = { black: _isDark ? '#e2e8f0' : '#162d42', blue:'#2563eb', red:'#dc2626' }[block.content?.color] || (_isDark ? '#e2e8f0' : '#162d42');
+				if (compact) {
+					el.innerHTML = `<h3 class="text-base font-bold mt-3 mb-2 tracking-tight" style="color:${shColor}"><span class="subheading-dash">- </span>${safeHtml(block.content.html || block.content.text || '')}</h3>`;
+				} else {
+					el.innerHTML = `<h3 class="text-2xl font-bold mt-6 mb-3 tracking-tight" style="color:${shColor}"><span class="subheading-dash">- </span>${safeHtml(block.content.html || block.content.text || '')}</h3>`;
 				}
-				case 2: // ImportantNote
+				break;
+			}
+case 2: // ImportantNote
+				if (compact) {
+					el.innerHTML = `
+						<div class="p-4 rounded-2xl text-white shadow-xl shadow-brand-teal/20 backdrop-blur-sm border border-white/10" style="background:#2d7a6f">
+							<div class="flex items-center gap-2 mb-2">
+								<i data-lucide="info" class="w-4 h-4"></i>
+								<h4 class="font-bold text-sm italic underline underline-offset-4">Önemli Bilgi</h4>
+							</div>
+							<p class="text-sm leading-relaxed font-semibold">${safeHtml(block.content.html || block.content.text || '')}</p>
+						</div>`;
+				} else {
 					el.innerHTML = `
 						<div class="p-8 rounded-[2.5rem] text-white shadow-2xl shadow-brand-teal/20 backdrop-blur-sm border border-white/10" style="background:#2d7a6f">
 							<div class="flex items-center gap-3 mb-3">
 								<i data-lucide="info" class="w-6 h-6"></i>
 								<h4 class="font-black text-xl italic underline underline-offset-8">Önemli Bilgi</h4>
 							</div>
-							<p class="text-lg leading-relaxed font-bold">${block.content.html || block.content.text || ''}</p>
+							<p class="text-lg leading-relaxed font-bold">${safeHtml(block.content.html || block.content.text || '')}</p>
 						</div>`;
-					break;
-				case 3: { // Video
-					const url = normalizeMediaUrl(block.content.url || "");
-					const mediaScale = Math.max(28, Math.min(100, Number(block.content?.mediaScale ?? 100)));
-					const vId = getYoutubeId(url);
-					const caption = block.content.caption || "";
-					if (vId) {
-						el.innerHTML = `
-							<div class="media-preview-frame" style="width:${mediaScale}%;margin:0 auto;"><iframe class="media-video-frame" src="https://www.youtube.com/embed/${vId}" frameborder="0" allowfullscreen></iframe></div>
-							<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${caption || "Video İçeriği"}</p>`;
-					} else {
-						el.innerHTML = `
-							<div class="media-preview-frame" style="width:${mediaScale}%;margin:0 auto;">
-								<video class="media-asset" controls>
-									<source src="${url}" />
-								</video>
-							</div>
-							<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${caption || "Yüklenen Video"}</p>`;
-					}
-					break;
 				}
-				case 4: // Image
+				break;
+case 3: { // Video
+				const url = normalizeMediaUrl(block.content.url || "");
+				const mediaScale = compact ? 100 : Math.max(28, Math.min(100, Number(block.content?.mediaScale ?? 100)));
+				const vId = getYoutubeId(url);
+				const caption = block.content.caption || "";
+				if (vId) {
 					el.innerHTML = `
-						<div class="group relative rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5">
-							<div class="media-preview-frame" style="width:${Math.max(28, Math.min(100, Number(block.content?.mediaScale ?? 100)))}%;margin:0 auto;"><img src="${normalizeMediaUrl(block.content.url)}" class="media-asset transition-transform duration-700 group-hover:scale-105" alt="Görsel" /></div>
-							${block.content.caption ? `<div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent text-white font-bold text-sm">${block.content.caption}</div>` : ""}
-						</div>`;
-					break;
-				case 5: { // DoubleImage
-					const urls = block.content?.urls || [];
-					const dCap = block.content?.caption || '';
-					const imgs = urls.map(u => `<div class="rounded-2xl overflow-hidden shadow-md"><div class="media-preview-frame"><img src="${normalizeMediaUrl(u || '')}" class="media-asset" onerror="this.src='https://via.placeholder.com/400x200?text=Gecersiz+URL'" /></div></div>`).join('');
-					el.innerHTML = `<div class="grid grid-cols-2 gap-4">${imgs}</div>${dCap ? `<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${dCap}</p>` : ''}`;
-					break;
-				}
-				case 6: // Code
-					el.innerHTML = `
-						<div class="p-8 rounded-[2.5rem] bg-slate-900 border border-white/10 shadow-2xl">
-							<pre class="text-brand-teal-light font-mono text-sm whitespace-pre-wrap break-words"><code>${block.content.code}</code></pre>
-						</div>`;
-					break;
-				case 8: { // List
-					const intro = block.content?.intro || '';
-					const items = (block.content.items || []).filter(i => i.trim()).map(i => `<li class="mb-2">${i.trim()}</li>`).join("");
-					const introHtml = intro ? `<p class="text-lg text-slate-600 dark:text-slate-300 mb-3">${intro}</p>` : '';
-					el.innerHTML = `${introHtml}<ol class="list-decimal pl-8 text-xl text-slate-600 dark:text-slate-300 space-y-2">${items}</ol>`;
-					break;
-				}
-				case 10: { // Grid
-					const cols = block.content.columns || [1, 1];
-					const colBlocks = block.content.columnBlocks || [];
-					const layout = block.content.layout || '';
-					const isMatrix = layout === 'matrix2x2';
-					const isWideBottom = layout === 'top-two-bottom-wide';
-					const total = cols.reduce((a, b) => a + b, 0);
-					const gridWrapper = document.createElement('div');
-					gridWrapper.className = 'grid gap-6 rounded-[2rem] border border-slate-200 dark:border-slate-700 p-6 bg-slate-50/50 dark:bg-slate-800/50 shadow-inner';
-					gridWrapper.style.gridTemplateColumns = (isMatrix || isWideBottom) ? '1fr 1fr' : cols.map(v => `${(v / total) * 100}%`).join(' ');
-					colBlocks.forEach((subBlocks, idx) => {
-						const col = document.createElement('div');
-						col.className = 'grid-col space-y-4';
-						if (isWideBottom && idx === 2) {
-							col.style.gridColumn = '1 / -1';
-						}
-						renderBlocksIntoContainer(col, subBlocks);
-						gridWrapper.appendChild(col);
-					});
-					el.appendChild(gridWrapper);
-					break;
-				}
-			case 11: { // Math
-				const latex = block.content.latex || '';
-				const display = block.content.display !== false;
-				const mathWrapper = document.createElement('div');
-				mathWrapper.className = 'math-rendered-block';
-				if (latex.trim() && typeof katex !== 'undefined') {
-					try {
-						katex.render(latex, mathWrapper, { displayMode: display, throwOnError: false });
-					} catch {
-						mathWrapper.textContent = latex;
-					}
+						<div class="media-preview-frame" style="width:${mediaScale}%;margin:0 auto;"><iframe class="media-video-frame" src="https://www.youtube.com/embed/${escapeAttr(vId)}" frameborder="0" allowfullscreen></iframe></div>
+						<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${escapeHtml(caption || "Video İçeriği")}</p>`;
 				} else {
-					mathWrapper.textContent = latex || 'LaTeX ifadesi girilmedi.';
-					mathWrapper.className = 'text-slate-400 italic';
+					el.innerHTML = `
+						<div class="media-preview-frame" style="width:${mediaScale}%;margin:0 auto;">
+							<video class="media-asset" controls>
+								<source src="${escapeAttr(url)}" />
+							</video>
+						</div>
+						<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${escapeHtml(caption || "Yüklenen Video")}</p>`;
 				}
-				el.appendChild(mathWrapper);
 				break;
 			}
+case 4: // Image
+				el.innerHTML = `
+					<div class="group relative rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5">
+						<div class="media-preview-frame" style="width:${compact ? 100 : Math.max(28, Math.min(100, Number(block.content?.mediaScale ?? 100)))}%;margin:0 auto;"><img src="${escapeAttr(normalizeMediaUrl(block.content.url))}" class="media-asset transition-transform duration-700 group-hover:scale-105" alt="Görsel" /></div>
+						${block.content.caption ? `<div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent text-white font-bold text-sm">${escapeHtml(block.content.caption)}</div>` : ""}
+					</div>`;
+				break;
+			case 5: { // DoubleImage
+				const urls = block.content?.urls || [];
+				const dCap = block.content?.caption || '';
+				const imgs = urls.map(u => `<div class="rounded-2xl overflow-hidden shadow-md"><div class="media-preview-frame"><img src="${escapeAttr(normalizeMediaUrl(u || ''))}" class="media-asset" alt="Görsel" /></div></div>`).join('');
+				el.innerHTML = `<div class="grid grid-cols-2 gap-4 min-w-0">${imgs}</div>${dCap ? `<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${escapeHtml(dCap)}</p>` : ''}`;
+				break;
+			}
+case 6: // Code
+				if (compact) {
+					el.innerHTML = `
+						<div class="p-4 rounded-2xl bg-slate-900 border border-white/10 shadow-xl">
+							<pre class="text-brand-teal-light font-mono text-xs whitespace-pre-wrap break-words"><code>${escapeHtml(block.content.code)}</code></pre>
+						</div>`;
+				} else {
+					el.innerHTML = `
+						<div class="p-8 rounded-[2.5rem] bg-slate-900 border border-white/10 shadow-2xl">
+							<pre class="text-brand-teal-light font-mono text-sm whitespace-pre-wrap break-words"><code>${escapeHtml(block.content.code)}</code></pre>
+						</div>`;
+				}
+				break;
+case 8: { // List
+				const intro = block.content?.intro || '';
+				const items = (block.content.items || []).filter(i => i && i.trim()).map(i => `<li class="${compact ? 'mb-1' : 'mb-2'}">${safeHtml(i.trim())}</li>`).join("");
+				if (compact) {
+					const introHtml = intro ? `<p class="text-sm text-slate-600 dark:text-slate-300 mb-2">${safeHtml(intro)}</p>` : '';
+					el.innerHTML = `${introHtml}<ol class="list-decimal pl-5 text-sm text-slate-600 dark:text-slate-300 space-y-1">${items}</ol>`;
+				} else {
+					const introHtml = intro ? `<p class="text-lg text-slate-600 dark:text-slate-300 mb-3">${safeHtml(intro)}</p>` : '';
+					el.innerHTML = `${introHtml}<ol class="list-decimal pl-8 text-xl text-slate-600 dark:text-slate-300 space-y-2">${items}</ol>`;
+				}
+				break;
+			}
+			case 10: { // Grid
+				const cols = block.content.columns || [1, 1];
+				const colBlocks = block.content.columnBlocks || [];
+				const layout = block.content.layout || '';
+				const isMatrix = layout === 'matrix2x2';
+				const isWideBottom = layout === 'top-two-bottom-wide';
+				const gridWrapper = document.createElement('div');
+				gridWrapper.className = 'grid gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50/50 dark:bg-slate-800/50 shadow-inner w-full min-w-0 overflow-hidden';
+				gridWrapper.style.gridTemplateColumns = (isMatrix || isWideBottom) ? '1fr 1fr' : cols.map(v => `${v}fr`).join(' ');
+				colBlocks.forEach((subBlocks, idx) => {
+					const col = document.createElement('div');
+					col.className = 'grid-col space-y-4 min-w-0 overflow-hidden';
+					if (isWideBottom && idx === 2) {
+						col.style.gridColumn = '1 / -1';
+					}
+					renderBlocksIntoContainer(col, subBlocks, true);
+					gridWrapper.appendChild(col);
+				});
+				el.appendChild(gridWrapper);
+				break;
+			}
+case 11: { // Math
+			const latex = block.content.latex || '';
+			const display = block.content.display !== false;
+			const mathWrapper = document.createElement('div');
+			mathWrapper.className = 'math-rendered-block' + (compact ? ' math-compact' : '');
+			if (latex.trim() && typeof katex !== 'undefined') {
+				try {
+					katex.render(latex, mathWrapper, { displayMode: display && !compact, throwOnError: false });
+				} catch {
+					mathWrapper.textContent = latex;
+				}
+			} else {
+				mathWrapper.textContent = latex || 'LaTeX ifadesi girilmedi.';
+				mathWrapper.className = compact ? 'text-slate-400 italic text-sm' : 'text-slate-400 italic';
+			}
+			el.appendChild(mathWrapper);
+			break;
+		}
 			case 12: { // Gif
 				const gUrl = normalizeMediaUrl(block.content.url || "");
-				const gScale = Math.max(28, Math.min(100, Number(block.content?.mediaScale ?? 100)));
+				const gScale = compact ? 100 : Math.max(28, Math.min(100, Number(block.content?.mediaScale ?? 100)));
 				const gSpeed = Number(block.content?.speed ?? 1);
 				const gCap = block.content.caption || "";
 				el.innerHTML = `
 					<div class="gif-block">
 						<div class="media-preview-frame" style="width:${gScale}%;margin:0 auto;">
-							<canvas class="gif-canvas-public" data-gif-url="${gUrl}" data-gif-speed="${gSpeed}" style="width:100%;height:auto;border-radius:0.75rem;background:transparent;display:block;"></canvas>
+							<canvas class="gif-canvas-public" data-gif-url="${escapeAttr(gUrl)}" data-gif-speed="${gSpeed}" style="width:100%;height:auto;border-radius:0.75rem;background:transparent;display:block;"></canvas>
 						</div>
 						<div class="gif-speed-control" style="width:${gScale}%;margin:0 auto;">
 							<span>Hız</span>
 							<input type="range" min="0.25" max="4" step="0.25" value="${gSpeed}" class="media-size-slider" />
 							<strong>${Number(gSpeed).toFixed(1)}x</strong>
 						</div>
-						${gCap ? `<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${gCap}</p>` : ""}
+						${gCap ? `<p class="text-xs text-center mt-4 text-slate-400 font-bold uppercase tracking-widest">${escapeHtml(gCap)}</p>` : ""}
 					</div>`;
 				break;
 			}

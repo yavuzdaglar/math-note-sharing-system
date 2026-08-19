@@ -1,5 +1,7 @@
 using Application.DTOs;
 using Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -16,37 +18,41 @@ public class CourseCategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(_categoryService.GetAllCategories());
+        return Ok(await _categoryService.GetAllCategoriesAsync(cancellationToken));
     }
 
     [HttpGet("{id}")]
-    public IActionResult GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
-        var category = _categoryService.GetCategoryById(id);
+        var category = await _categoryService.GetCategoryByIdAsync(id, cancellationToken);
         if (category == null) return NotFound();
         return Ok(category);
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
-    public IActionResult Add([FromBody] CourseCategoryCreateDto dto)
+    public async Task<IActionResult> Add([FromBody] CourseCategoryCreateDto dto, CancellationToken cancellationToken)
     {
-        _categoryService.AddCategory(dto);
-        return Ok("Kategori eklendi!");
+        var id = await _categoryService.AddCategoryAsync(dto, cancellationToken);
+        if (id == null) return BadRequest("Kategori adı 1-100 karakter olmalıdır.");
+        return StatusCode(StatusCodes.Status201Created, new { id, name = dto.Name });
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPut]
-    public IActionResult Update([FromBody] CourseCategoryUpdateDto dto)
+    public async Task<IActionResult> Update([FromBody] CourseCategoryUpdateDto dto, CancellationToken cancellationToken)
     {
-        _categoryService.UpdateCategory(dto);
-        return Ok("Kategori güncellendi!");
+        if (!await _categoryService.UpdateCategoryAsync(dto, cancellationToken)) return BadRequest("Kategori bulunamadı veya kategori adı çok uzun.");
+        return Ok(new { id = dto.Id, name = dto.Name });
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        _categoryService.DeleteCategory(id);
-        return Ok("Kategori silindi!");
+        if (!await _categoryService.DeleteCategoryAsync(id, cancellationToken)) return NotFound("Kategori bulunamadı.");
+        return NoContent();
     }
 }

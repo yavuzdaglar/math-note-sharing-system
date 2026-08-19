@@ -7,7 +7,7 @@ public interface INoteRepository
     Task<Note?> GetByIdAsync(int id, bool includeBlocks, CancellationToken cancellationToken);
     Task<Note?> GetPublishedByCourseIdAsync(int courseId, CancellationToken cancellationToken);
     Task<bool> CourseHasNoteAsync(int courseId, int? excludeNoteId, CancellationToken cancellationToken);
-    Task<(IReadOnlyList<Note> Items, int TotalCount)> GetPagedAsync(
+    Task<(IReadOnlyList<NoteListItem> Items, int TotalCount)> GetPagedAsync(
         NoteStatus? status,
         string? search,
         int page,

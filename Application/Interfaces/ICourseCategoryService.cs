@@ -4,9 +4,9 @@ namespace Application.Interfaces;
 
 public interface ICourseCategoryService
 {
-    List<CourseCategoryDto> GetAllCategories();
-    CourseCategoryDto? GetCategoryById(int id);
-    void AddCategory(CourseCategoryCreateDto dto);
-    void UpdateCategory(CourseCategoryUpdateDto dto);
-    void DeleteCategory(int id);
+    Task<List<CourseCategoryDto>> GetAllCategoriesAsync(CancellationToken cancellationToken = default);
+    Task<CourseCategoryDto?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<int?> AddCategoryAsync(CourseCategoryCreateDto dto, CancellationToken cancellationToken = default);
+    Task<bool> UpdateCategoryAsync(CourseCategoryUpdateDto dto, CancellationToken cancellationToken = default);
+    Task<bool> DeleteCategoryAsync(int id, CancellationToken cancellationToken = default);
 }

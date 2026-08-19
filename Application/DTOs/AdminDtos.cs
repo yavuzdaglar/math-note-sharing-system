@@ -11,6 +11,10 @@ public class AdminLoginResponse
     public bool Success { get; set; }
     public string? Message { get; set; }
     public string? RedirectUrl { get; set; }
+    public int? AdminId { get; set; }
+    public string? Username { get; set; }
+    public string? Token { get; set; }
+    public DateTime? ExpiresAtUtc { get; set; }
 }
 
 public class AdminDto

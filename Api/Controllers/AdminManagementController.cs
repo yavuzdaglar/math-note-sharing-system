@@ -1,11 +1,13 @@
 using Application.DTOs;
 using Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("api/admin/manage")]
+[Authorize(Roles = "Admin")]
 public class AdminManagementController : ControllerBase
 {
     private readonly IAdminService _adminService;
@@ -27,7 +29,9 @@ public class AdminManagementController : ControllerBase
     {
         var admin = await _adminService.CreateAsync(request, cancellationToken);
         if (admin == null)
-            return BadRequest(new { message = "Kullanıcı adı zaten mevcut veya geçersiz." });
+        {
+            return BadRequest(new { message = "Kullanıcı adı zaten mevcut veya geçersiz (kullanıcı adı 3-50, parola en az 8 karakter olmalı)." });
+        }
         return Ok(admin);
     }
 

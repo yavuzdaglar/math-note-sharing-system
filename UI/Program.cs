@@ -1,12 +1,26 @@
+using Microsoft.AspNetCore.Antiforgery;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient();
-builder.Services.AddSession(options => {
-    options.IdleTimeout = TimeSpan.FromHours(1);
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "RequestVerificationToken";
     options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
+
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.IsEssential = true;
 });
+
 builder.Services.AddHttpClient<UI.Services.CourseCatalogClient>(client =>
 {
     var baseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7078/";
@@ -17,9 +31,23 @@ var app = builder.Build();
 
 app.UseSession();
 
+app.UseHsts();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// Guvenlik header'lari
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "no-referrer";
+    headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
+    await next();
+});
+
 app.UseRouting();
+app.UseAntiforgery();
 
 app.MapControllerRoute(
     name: "default",
