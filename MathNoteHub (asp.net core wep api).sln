@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UI", "UI\UI.csproj", "{3F7A44ED-7171-46C5-AFA2-E83442D811B3}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\Application.csproj", "{975A6737-EAE0-40FF-B14B-78FF657360BA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{59BE8ED4-BC08-4479-A4BF-83771B99EF96}"
@@ -25,18 +23,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Debug|x64.Build.0 = Debug|Any CPU
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Debug|x86.Build.0 = Debug|Any CPU
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Release|x64.ActiveCfg = Release|Any CPU
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Release|x64.Build.0 = Release|Any CPU
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Release|x86.ActiveCfg = Release|Any CPU
-		{3F7A44ED-7171-46C5-AFA2-E83442D811B3}.Release|x86.Build.0 = Release|Any CPU
 		{975A6737-EAE0-40FF-B14B-78FF657360BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{975A6737-EAE0-40FF-B14B-78FF657360BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{975A6737-EAE0-40FF-B14B-78FF657360BA}.Debug|x64.ActiveCfg = Debug|Any CPU

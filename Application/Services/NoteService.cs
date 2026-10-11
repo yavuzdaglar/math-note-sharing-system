@@ -154,7 +154,12 @@ public class NoteService : INoteService
         note.Title = dto.Title.Trim();
         note.Slug = string.IsNullOrWhiteSpace(dto.Slug) ? null : dto.Slug.Trim();
         note.Summary = string.IsNullOrWhiteSpace(dto.Summary) ? null : dto.Summary.Trim();
-        note.CourseId = dto.CourseId;
+        // Taslak Kaydet courseId=null gonderebilir; mevcut baglantiyi silme
+        // (yoksa yayinli not orphan kalip ana ekranda kayboluyor).
+        if (dto.CourseId.HasValue)
+        {
+            note.CourseId = dto.CourseId;
+        }
         note.UpdatedAtUtc = now;
 
         if (dto.CourseId.HasValue)
@@ -558,7 +563,7 @@ public class NoteService : INoteService
                 }
                 return null;
             case NoteBlockType.DoubleImage:
-                return ValidateUrlArray(limit: MaxStringLength, block.Content, "urls", 2);
+                return ValidateUrlArray(limit: MaxStringLength, block.Content, "urls", 2, validateUrls: true);
             case NoteBlockType.Code:
                 if (!TryGetString(block.Content, "code", out _))
                 {
@@ -641,7 +646,33 @@ public class NoteService : INoteService
 
     private static bool IsSafeHttpUrl(string url)
     {
-        return Uri.TryCreate(url, UriKind.Absolute, out var uri)
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return false;
+        }
+
+        var trimmed = url.Trim();
+
+        // Tehlikeli scheme'leri kesinlikle reddet (javascript:, data:, file:, vb.)
+        if (trimmed.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // Api'nin kendi urettigi relative path'ler: /uploads/xxx.jpg gibi.
+        // MediaController.Upload / UploadFromUrl hep "/uploads/{guid}.ext" doner.
+        if (trimmed.StartsWith("/", StringComparison.Ordinal)
+            && !trimmed.StartsWith("//", StringComparison.Ordinal)
+            && !trimmed.Contains(' ')
+            && trimmed.Length > 1)
+        {
+            return true;
+        }
+
+        return Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
             && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
     }
 
@@ -657,7 +688,7 @@ public class NoteService : INoteService
         return null;
     }
 
-    private static string? ValidateUrlArray(long limit, JsonElement content, string property, int minLength)
+    private static string? ValidateUrlArray(long limit, JsonElement content, string property, int minLength, bool validateUrls = false)
     {
         if (!content.TryGetProperty(property, out var element))
         {
@@ -681,6 +712,10 @@ public class NoteService : INoteService
             if (item.ValueKind != JsonValueKind.String) continue;
             var s = item.GetString();
             if (s != null && s.Length > limit) return $"{property} iceren deger cok uzun.";
+            if (validateUrls && !string.IsNullOrWhiteSpace(s) && !IsSafeHttpUrl(s!))
+            {
+                return "Gecersiz URL.";
+            }
         }
         return null;
     }

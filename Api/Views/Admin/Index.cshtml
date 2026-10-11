@@ -1,0 +1,272 @@
+@using Application.DTOs
+@{
+    ViewData["Title"] = "Vurmaz Online - Admin Kontrol Paneli";
+
+    var categories = ViewBag.Categories as List<CourseCategoryDto> ?? new();
+
+    var courses = ViewBag.Courses as List<CourseDto> ?? new();
+
+    var apiBaseUrl = (ViewBag.ApiBaseUrl as string) ?? string.Empty;
+    var apiToken = ViewBag.ApiToken as string ?? "";
+}
+
+<script>
+    window.API_BASE_URL = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(apiBaseUrl));
+    window.API_TOKEN = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(apiToken));
+</script>
+@Html.AntiForgeryToken()
+
+<button type="button" onclick="window.location.href='/'" class="fixed top-4 left-4 z-[9999] flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-700 shadow-md backdrop-blur hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200">
+    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+    <span>Ana Sayfa</span>
+</button>
+
+<div class="min-h-screen bg-[#f1f5f9] dark:bg-[#0d161e] dark:text-slate-100 pb-20">
+    <!-- Header Section: Gradient Glassmorphism -->
+    <div class="relative overflow-hidden bg-[#1b3a52] dark:bg-[#0b141b] pb-32 pt-16">
+        <div class="absolute inset-0 bg-gradient-to-br from-[#1b3a52] via-[#142636] to-brand-teal opacity-50 dark:from-[#0b141b] dark:via-[#0b141b] dark:to-[#12303f]"></div>
+        <div class="absolute -top-24 -right-24 w-96 h-96 bg-brand-teal opacity-20 blur-[100px] rounded-full"></div>
+        <div class="relative max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="animate-in fade-in slide-in-from-left-4 duration-700">
+                    <span
+                        class="inline-block px-4 py-1.5 rounded-full bg-brand-teal/20 text-brand-teal-light text-xs font-black uppercase tracking-widest mb-4 border border-brand-teal/30">Admin
+                        Sistemi</span>
+                    <h1 class="text-3xl md:text-4xl font-black text-white tracking-tighter">Admin Kontrol Paneli</h1>
+                    <p class="text-slate-400 mt-2 font-medium text-sm md:text-base max-w-xl">Notları, dersleri ve
+                        kategorileri tek bir merkezden yönetin.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 md:gap-3">
+                    <a href="/"
+                        class="px-4 md:px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-white font-bold text-sm hover:bg-white/20 transition-all flex items-center gap-2">
+                        <i data-lucide="home" class="w-4 h-4"></i> Siteye Dön
+                    </a>
+                    <a href="/Notes/Editor"
+                        class="px-4 md:px-6 py-3 md:py-4 rounded-2xl bg-brand-teal text-white font-black text-sm hover:bg-brand-teal-light transition-all flex items-center gap-2 shadow-xl shadow-teal-500/20">
+                        <i data-lucide="plus" class="w-5 h-5"></i> Yeni Not
+                    </a>
+                    <button onclick="logoutAdmin()"
+                        class="px-4 md:px-6 py-3 rounded-2xl bg-red-600/20 backdrop-blur-md border border-red-400/20 text-white font-bold text-sm hover:bg-red-600/40 transition-all flex items-center gap-2">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> Çıkış
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content: Dashboard Layout -->
+    <div class="max-w-7xl mx-auto px-6 -mt-12">
+        <!-- Dashboard Tabs -->
+        <div
+            class="bg-white/80 backdrop-blur-xl p-2 rounded-3xl border border-white/20 shadow-xl mb-8 flex flex-wrap gap-2">
+            <button onclick="switchTab('notes')" id="tab-notes"
+                class="tab-btn active flex-1 py-4 px-6 rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Tüm Notlar
+            </button>
+            <button onclick="switchTab('courses')" id="tab-courses"
+                class="tab-btn flex-1 py-4 px-6 rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all text-slate-500 hover:bg-slate-50">
+                <i data-lucide="book-open" class="w-4 h-4"></i> Dersler
+            </button>
+            <button onclick="switchTab('categories')" id="tab-categories"
+                class="tab-btn flex-1 py-4 px-6 rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all text-slate-500 hover:bg-slate-50">
+                <i data-lucide="layers" class="w-4 h-4"></i> Kategoriler
+            </button>
+            <button onclick="switchTab('admins')" id="tab-admins"
+                class="tab-btn flex-1 py-4 px-6 rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all text-slate-500 hover:bg-slate-50">
+                <i data-lucide="shield" class="w-4 h-4"></i> Adminler
+            </button>
+        </div>
+
+        <!-- Tab Contents -->
+        <div id="content-notes" class="tab-content">
+            <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                <div class="p-4 md:p-8 border-b border-slate-50 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+                    <h2 class="text-xl font-black text-slate-800">Son Eklenen Notlar</h2>
+                    <div class="relative w-full sm:w-auto">
+                        <i data-lucide="search"
+                            class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                        <input type="text" id="searchInput" placeholder="Notlarda ara..."
+                            class="pl-11 pr-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm w-full sm:w-64 focus:ring-2 focus:ring-brand-teal/20 outline-none" />
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-slate-50/50">
+                            <tr>
+                                <th
+                                    class="px-8 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
+                                    Not Başlığı</th>
+                                <th
+                                    class="px-8 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
+                                    Durum</th>
+                                <th
+                                    class="px-8 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
+                                    Bağlı Ders / Kategori</th>
+                                <th
+                                    class="px-8 py-4 text-right text-xs font-black text-slate-400 uppercase tracking-wider">
+                                    İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="notesTableBody" class="divide-y divide-slate-50">
+                            <!-- JS ile dolacak -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="content-courses" class="tab-content hidden animate-in fade-in duration-500">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach (var course in courses)
+                {
+                    <div
+                        class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:border-brand-teal/30 hover:shadow-lg transition-all group">
+                        <div
+                            class="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-brand-teal group-hover:text-white transition-all">
+                            <i data-lucide="book" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="font-black text-slate-800 text-lg">@course.Name</h3>
+                        <p class="text-xs font-bold text-brand-teal uppercase mt-1">@course.CategoryName</p>
+                        <div class="mt-6 flex justify-end gap-2">
+                            <button onclick="deleteCourse(@course.Id)"
+                                class="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+                <button onclick="openCourseModal()"
+                    class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-6 flex flex-col items-center justify-center text-slate-400 hover:border-brand-teal hover:text-brand-teal transition-all group">
+                    <i data-lucide="plus-circle" class="w-8 h-8 mb-2 group-hover:scale-110 transition-transform"></i>
+                    <span class="font-bold">Yeni Ders Ekle</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="content-categories" class="tab-content hidden animate-in fade-in duration-500">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                @foreach (var cat in categories)
+                {
+                    <div
+                        class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-brand-teal transition-all">
+                        <span class="font-black text-slate-700">@cat.Name</span>
+                        <button onclick="deleteCategory(@cat.Id)"
+                            class="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                }
+                <button onclick="openCategoryModal()"
+                    class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-6 flex items-center justify-center text-slate-400 hover:border-brand-teal hover:text-brand-teal transition-all group">
+                    <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+                    <span class="font-bold text-sm">Yeni Kategori</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="content-admins" class="tab-content hidden animate-in fade-in duration-500">
+            <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                <div class="p-8 border-b border-slate-50 flex justify-between items-center">
+                    <h2 class="text-xl font-black text-slate-800">Yönetici Hesapları</h2>
+                    <button onclick="openAdminModal()"
+                        class="px-5 py-2.5 bg-brand-teal text-white font-bold text-sm rounded-xl hover:bg-brand-teal-light transition-all flex items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Yeni Admin
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-slate-50/50">
+                            <tr>
+                                <th class="px-8 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">Kullanıcı Adı</th>
+                                <th class="px-8 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">Oluşturulma</th>
+                                <th class="px-8 py-4 text-right text-xs font-black text-slate-400 uppercase tracking-wider">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminsTableBody" class="divide-y divide-slate-50">
+                            <!-- JS ile dolacak -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modallar -->
+<div id="catModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCatModal()"></div>
+    <div class="bg-white dark:bg-[#0f172a] dark:text-slate-100 relative z-10 w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
+        <h3 class="text-2xl font-black text-slate-900 dark:text-slate-100 mb-2">Kategori Oluştur</h3>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mb-8 font-medium">Sisteme yeni bir ana başlık tanımlayın.</p>
+        <input type="text" id="catName"
+            class="w-full p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-2xl mb-8 outline-none focus:ring-4 focus:ring-brand-teal/10 dark:placeholder:text-slate-500"
+            placeholder="Örn: Mühendislik" />
+        <button onclick="saveCategory()"
+            class="w-full py-5 bg-brand-teal text-white font-black rounded-2xl shadow-xl shadow-teal-100 hover:bg-brand-teal-light transition-all">Kategoriyi
+            Kaydet</button>
+    </div>
+</div>
+
+<div id="adminModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeAdminModal()"></div>
+    <div class="bg-white dark:bg-[#0f172a] dark:text-slate-100 relative z-10 w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
+        <h3 class="text-2xl font-black text-slate-900 dark:text-slate-100 mb-2">Admin Oluştur</h3>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mb-8 font-medium">Sisteme yeni bir yönetici tanımlayın.</p>
+        <input type="text" id="adminUsername"
+            class="w-full p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-2xl mb-4 outline-none focus:ring-4 focus:ring-brand-teal/10"
+            placeholder="Kullanıcı Adı" />
+        <input type="password" id="adminPassword"
+            class="w-full p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-2xl mb-8 outline-none focus:ring-4 focus:ring-brand-teal/10"
+            placeholder="Şifre" />
+        <button onclick="saveAdmin()"
+            class="w-full py-5 bg-brand-teal text-white font-black rounded-2xl shadow-xl shadow-teal-100 hover:bg-brand-teal-light transition-all">Admini Kaydet</button>
+    </div>
+</div>
+
+<div id="courseModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCourseModal()"></div>
+    <div class="bg-white dark:bg-[#0f172a] dark:text-slate-100 relative z-10 w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
+        <h3 class="text-2xl font-black text-slate-900 dark:text-slate-100 mb-2">Ders Tanımla</h3>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mb-8 font-medium">Notların bağlanacağı yeni dersi oluşturun.</p>
+
+        <label class="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase mb-2 ml-2">Kategori</label>
+        <select id="courseCatSelect"
+            class="w-full p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-2xl mb-4 outline-none focus:ring-4 focus:ring-brand-teal/10">
+            @foreach (var cat in categories)
+            {
+                <option value="@cat.Id">@cat.Name</option>
+            }
+        </select>
+
+        <label class="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase mb-2 ml-2">Ders Adı</label>
+        <input type="text" id="courseName"
+            class="w-full p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-2xl mb-8 outline-none focus:ring-4 focus:ring-brand-teal/10 dark:placeholder:text-slate-500"
+            placeholder="Örn: Kalkülüs" />
+
+        <button onclick="saveCourse()"
+            class="w-full py-5 bg-brand-teal text-white font-black rounded-2xl shadow-xl shadow-teal-100 hover:bg-brand-teal-light transition-all">Dersi
+            Kaydet</button>
+    </div>
+</div>
+
+<style>
+    .tab-btn.active {
+        background-color: #0d9488;
+        color: white;
+        box-shadow: 0 10px 15px -3px rgba(13, 148, 136, 0.2);
+    }
+</style>
+
+@section Scripts {
+    <script>
+        async function logoutAdmin() {
+            const formData = new FormData();
+            formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]')?.value || '');
+            try {
+                await fetch('/Account/Logout', { method: 'POST', body: formData });
+            } catch (e) { }
+            window.location.href = '/';
+        }
+    </script>
+    <script src="~/js/admin.js?v=3"></script>
+}
